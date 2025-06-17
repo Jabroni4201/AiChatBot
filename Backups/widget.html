@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luna Customer Support</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a1a; /* Dark background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .chat-container {
+            background-color: #2a2a2a; /* Slightly lighter dark for container */
+            border-radius: 1rem; /* Rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); /* Darker shadow */
+            width: 100%;
+            max-width: 600px;
+            height: 80vh; /* Responsive height */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Ensures rounded corners are respected */
+        }
+        .chat-header {
+            background-color: #3a3a3a; /* Darker header */
+            color: #ffffff;
+            padding: 1rem 1.5rem;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+            display: flex;
+            flex-direction: column; /* Allow stacking for client selector */
+            gap: 0.5rem;
+            align-items: flex-start;
+            border-bottom: 1px solid #4a4a4a;
+        }
+        .chat-messages {
+            flex-grow: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            background-color: #2a2a2a; /* Same as container */
+            display: flex;
+            flex-direction: column;
+            gap: 1rem; /* Space between messages */
+        }
+        .message {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            line-height: 1.4;
+            word-wrap: break-word; /* Ensure long words break */
+        }
+        .message.user {
+            background-color: #007bff; /* Blue for user */
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 0.25rem; /* Pointy corner */
+        }
+        .message.bot {
+            background-color: #4a4a4a; /* Grey for bot */
+            color: #e0e0e0;
+            align-self: flex-start;
+            border-bottom-left-radius: 0.25rem; /* Pointy corner */
+        }
+        .chat-input-area {
+            background-color: #3a3a3a; /* Darker input area */
+            padding: 1rem 1.5rem;
+            border-bottom-left-radius: 1rem;
+            border-bottom-right-radius: 1rem;
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            border-top: 1px solid #4a4a4a;
+        }
+        .chat-input {
+            flex-grow: 1;
+            background-color: #4a4a4a;
+            border: 1px solid #555;
+            color: #e0e0e0;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            outline: none;
+        }
+        .chat-button {
+            background-color: #007bff;
+            color: white;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-weight: 600;
+        }
+        .chat-button:hover {
+            background-color: #0056b3;
+        }
+        .reset-button {
+            background-color: #dc3545;
+        }
+        .reset-button:hover {
+            background-color: #c82333;
+        }
+        .loading-indicator {
+            text-align: center;
+            padding: 1rem;
+            color: #a0a0a0;
+            font-style: italic;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #2a2a2a;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.7);
+            max-width: 400px;
+            text-align: center;
+            color: #e0e0e0;
+        }
+        .modal-buttons {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        .modal-buttons button {
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2 class="text-xl font-semibold">Luna Customer Support</h2>
+            <div class="flex items-center gap-2 mt-2">
+                <label for="client-selector" class="text-sm font-medium">Select Business:</label>
+                <select id="client-selector" class="px-3 py-2 rounded-md bg-gray-700 border-gray-600 text-white text-sm">
+                    <!-- Client options will be loaded dynamically here -->
+                </select>
+            </div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <!-- Messages will appear here -->
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="user-input" class="chat-input" placeholder="Type your message...">
+            <button id="send-button" class="chat-button">Send</button>
+            <button id="reset-button" class="chat-button reset-button">Reset Chat</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000'; // Your FastAPI backend URL
+
+        // --- Global Variables ---
+        let currentUserId = 'guest_user_' + Math.random().toString(36).substring(2, 15); // Unique ID for guest user
+        let currentClientId = ''; // Will be set by selector
+
+        // --- DOM Elements ---
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const resetButton = document.getElementById('reset-button');
+        const clientSelector = document.getElementById('client-selector');
+
+        // --- Utility Functions ---
+
+        // Custom alert/confirm modals instead of browser defaults
+        function createModal(message, type = 'alert') {
+            const modalOverlay = document.createElement('div');
+            modalOverlay.className = 'modal-overlay';
+            modalOverlay.innerHTML = `
+                <div class="modal-content">
+                    <p>${message}</p>
+                    <div class="modal-buttons">
+                        <button id="modal-ok" class="chat-button">OK</button>
+                        ${type === 'confirm' ? '<button id="modal-cancel" class="chat-button reset-button">Cancel</button>' : ''}
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modalOverlay);
+
+            return new Promise(resolve => {
+                document.getElementById('modal-ok').onclick = () => {
+                    modalOverlay.remove();
+                    resolve(true);
+                };
+                if (type === 'confirm') {
+                    document.getElementById('modal-cancel').onclick = () => {
+                        modalOverlay.remove();
+                        resolve(false);
+                    };
+                }
+            });
+        }
+
+        function showCustomAlert(message) {
+            return createModal(message, 'alert');
+        }
+
+        function showCustomConfirm(message) {
+            return createModal(message, 'confirm');
+        }
+
+
+        function displayMessage(sender, message) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', sender);
+            messageElement.textContent = message;
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to bottom
+        }
+
+        async function fetchData(url, method = 'GET', body = null) {
+            try {
+                const options = { method };
+                if (body) {
+                    options.headers = { 'Content-Type': 'application/json' };
+                    options.body = JSON.stringify(body);
+                }
+                const response = await fetch(url, options);
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.detail || `API error: ${response.status}`);
+                }
+                return data;
+            } catch (error) {
+                console.error('Fetch error:', error);
+                showCustomAlert(`Error: ${error.message}`);
+                throw error; // Re-throw to be caught by the calling function
+            }
+        }
+
+        // --- Chat Functions ---
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (message === '') return;
+            if (currentClientId === '') {
+                showCustomAlert('Please select a business first!');
+                return;
+            }
+
+            displayMessage('user', message);
+            userInput.value = ''; // Clear input
+
+            // Add a temporary loading indicator for bot response
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.classList.add('loading-indicator');
+            loadingIndicator.textContent = 'Luna is typing...';
+            chatMessages.appendChild(loadingIndicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            try {
+                const response = await fetchData(`${API_BASE_URL}/chat`, 'POST', {
+                    user_id: currentUserId,
+                    client_id: currentClientId,
+                    message: message
+                });
+                displayMessage('bot', response.response);
+            } catch (error) {
+                displayMessage('bot', "I'm sorry, I'm having trouble connecting right now. Please try again later.");
+            } finally {
+                loadingIndicator.remove(); // Remove loading indicator
+            }
+        }
+
+        async function loadHistory() {
+            chatMessages.innerHTML = ''; // Clear current messages
+            if (currentClientId === '') return;
+
+            try {
+                const historyData = await fetchData(`${API_BASE_URL}/history/${currentUserId}/${currentClientId}`);
+                historyData.history.forEach(entry => {
+                    if (entry.message.startsWith('User: ')) {
+                        displayMessage('user', entry.message.replace('User: ', ''));
+                    } else if (entry.message.startsWith('Bot: ')) {
+                        displayMessage('bot', entry.message.replace('Bot: ', ''));
+                    }
+                });
+            } catch (error) {
+                // Error already handled by fetchData
+                displayMessage('bot', "Failed to load chat history.");
+            }
+        }
+
+        async function resetChat() {
+            if (currentClientId === '') {
+                showCustomAlert('Please select a business first.');
+                return;
+            }
+            const confirmReset = await showCustomConfirm('Are you sure you want to reset the chat history for this client?');
+            if (confirmReset) {
+                try {
+                    const data = await fetchData(`${API_BASE_URL}/reset/${currentUserId}/${currentClientId}`, 'POST');
+                    showCustomAlert(data.message, 'success');
+                    await loadHistory(); // Reloads empty history
+                } catch (error) {
+                    // Error already handled by fetchData
+                    showCustomAlert("Failed to reset chat history.", 'error');
+                }
+            }
+        }
+
+        // --- New Client Loading Function ---
+        async function loadClientsIntoSelector() {
+            try {
+                const clients = await fetchData(`${API_BASE_URL}/admin/clients`);
+                clientSelector.innerHTML = '<option value="">-- Select Business --</option>'; // Clear existing
+                clients.forEach(client => {
+                    const option = document.createElement('option');
+                    option.value = client.client_id;
+                    option.textContent = client.business_name;
+                    clientSelector.appendChild(option);
+                });
+
+                // Set initial client_id if any clients are available
+                if (clients.length > 0) {
+                    currentClientId = clients[0].client_id; // Set to the first client by default
+                    clientSelector.value = currentClientId;
+                    loadHistory(); // Load history for the default selected client
+                }
+
+            } catch (error) {
+                // Error handled by fetchData
+                showCustomAlert('Failed to load businesses. Please ensure the admin API is running.', 'error');
+            }
+        }
+
+        // --- Event Listeners ---
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        resetButton.addEventListener('click', resetChat);
+
+        // Event listener for client selector change
+        clientSelector.addEventListener('change', (event) => {
+            currentClientId = event.target.value;
+            console.log(`Switched to client: ${currentClientId}`);
+            loadHistory(); // Load history for the newly selected client
+        });
+
+        // Load clients into selector AND history when the page loads
+        window.addEventListener('load', async () => {
+            await loadClientsIntoSelector(); // First, load clients
+            // loadHistory() is called within loadClientsIntoSelector if clients are present
+        });
+    </script>
+</body>
+</html>

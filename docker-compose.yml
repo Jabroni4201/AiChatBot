@@ -1,0 +1,27 @@
+# docker-compose.yml
+# For deploying Luna's FastAPI application service to an EC2 instance
+# and connecting to an external AWS RDS PostgreSQL database.
+
+services:
+  api:
+    # 'build: .' tells Docker Compose to look for a Dockerfile in the current directory (where this docker-compose.yml is).
+    # This Dockerfile will be responsible for setting up your Python environment and installing dependencies.
+    build: .
+    
+    # Maps port 8000 on your EC2 instance (host) to port 8000 inside the container.
+    # This is how users will access Luna's API and web widgets.
+    ports:
+      - "8000:8000"
+      
+    # Specifies that environment variables for this service should be loaded from the 'production.env' file.
+    # This is where your AWS RDS database credentials will be.
+    env_file:
+      - ./production.env
+      
+    # 'restart: unless-stopped' ensures the container automatically restarts if it crashes
+    # or if the Docker daemon restarts, unless you manually stop it.
+    restart: unless-stopped
+    
+    # You might add other configurations here in the future, e.g.:
+    # - volumes: for persistent storage for your application (e.g., logs)
+    # - depends_on: if you had other services in this same docker-compose.yml (e.g., Redis)
