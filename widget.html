@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Luna Customer Support</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -156,13 +154,11 @@
             <div class="flex items-center gap-2 mt-2">
                 <label for="client-selector" class="text-sm font-medium">Select Business:</label>
                 <select id="client-selector" class="px-3 py-2 rounded-md bg-gray-700 border-gray-600 text-white text-sm">
-                    <!-- Client options will be loaded dynamically here -->
-                </select>
+                    </select>
             </div>
         </div>
         <div class="chat-messages" id="chat-messages">
-            <!-- Messages will appear here -->
-        </div>
+            </div>
         <div class="chat-input-area">
             <input type="text" id="user-input" class="chat-input" placeholder="Type your message...">
             <button id="send-button" class="chat-button">Send</button>
@@ -171,7 +167,19 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'http://localhost:8000'; // Your FastAPI backend URL
+        // Dynamic API_BASE_URL based on hostname
+        const currentHostname = window.location.hostname;
+        let API_BASE_URL;
+
+        if (currentHostname === 'localhost' || currentHostname === '127.0.0.1') {
+            API_BASE_URL = 'http://localhost:8000'; // Local development URL
+        } else {
+            // For EC2 or public access, use the current hostname (or a specific IP if preferred)
+            API_BASE_URL = `http://${currentHostname}:8000`; 
+            // If you want to force a specific EC2 IP:
+            // API_BASE_URL = 'http://50.18.38.83:8000'; // Uncomment and use this line for a fixed EC2 IP
+        }
+
 
         // --- Global Variables ---
         let currentUserId = 'guest_user_' + Math.random().toString(36).substring(2, 15); // Unique ID for guest user

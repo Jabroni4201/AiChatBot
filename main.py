@@ -2,14 +2,22 @@
 # This file sets up the FastAPI web application, defines API endpoints,
 # and handles cross-origin resource sharing (CORS).
 
-from fastapi import FastAPI, HTTPException, Request # Added Request
-from fastapi.middleware.cors import CORSMiddleware # Import CORS middleware for cross-origin requests
-from pydantic import BaseModel # Used to define data structures for API requests and responses
-from fastapi.responses import HTMLResponse # NEW: Import HTMLResponse for serving HTML files
-from fastapi.staticfiles import StaticFiles # NEW: Import StaticFiles for serving static assets
-import chatbot_core # Import your core chatbot logic from the chatbot_core.py file
-import admin_api # FIXED: Changed from relative 'from . import admin_api' to absolute 'import admin_api'
-from typing import Optional # NEW: For Optional type hints
+from fastapi import FastAPI, HTTPException, Request 
+from fastapi.middleware.cors import CORSMiddleware 
+from pydantic import BaseModel 
+from fastapi.responses import HTMLResponse 
+# Removed: from fastapi.staticfiles import StaticFiles # NO LONGER NEEDED
+
+import chatbot_core 
+import admin_api 
+from typing import Optional 
+
+# NEW: For loading environment variables from .env file
+from dotenv import load_dotenv
+
+# Load environment variables from .env file (for local dev)
+# On EC2, production.env should be sourced or env vars set globally
+load_dotenv() 
 
 # --- FastAPI App Initialization ---
 app = FastAPI(
@@ -21,9 +29,7 @@ app = FastAPI(
 # NEW: Include the admin_api router in the main app
 app.include_router(admin_api.router)
 
-# NEW: Serve static files (like your HTML widget, CSS, JS files, etc.)
-# You might want to create a 'static' directory in your project root for these files.
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Removed: app.mount("/static", StaticFiles(directory="static"), name="static") # NO LONGER NEEDED
 
 # NEW: Endpoint to serve the Admin Dashboard HTML
 @app.get("/admin", response_class=HTMLResponse, summary="Luna Admin Dashboard")
@@ -32,7 +38,7 @@ async def get_admin_dashboard(request: Request):
     Serves the HTML file for the admin dashboard.
     """
     try:
-        # IMPORTANT: Ensure the 'templates' directory exists in the same path as main.py
+        # IMPORTANT: This assumes admin_dashboard.html is in a 'templates' directory
         with open("templates/admin_dashboard.html", "r", encoding="utf-8") as f:
             html_content = f.read()
         return HTMLResponse(content=html_content)
@@ -40,6 +46,38 @@ async def get_admin_dashboard(request: Request):
         raise HTTPException(status_code=404, detail="Admin dashboard HTML not found. Make sure 'templates/admin_dashboard.html' exists.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error serving admin dashboard: {str(e)}")
+
+# NEW: Endpoint to serve the Chat Widget HTML
+@app.get("/widget.html", response_class=HTMLResponse, summary="Luna Chat Widget")
+async def get_widget_html():
+    """
+    Serves the HTML file for the main chat widget.
+    """
+    try:
+        # Assumes widget.html is in the root directory of the project
+        with open("widget.html", "r", encoding="utf-8") as f:
+            html_content = f.read()
+        return HTMLResponse(content=html_content)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Chat widget HTML not found. Make sure 'widget.html' exists in the root.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error serving chat widget: {str(e)}")
+
+# NEW: Endpoint to serve favicon.ico (optional, but good practice)
+@app.get("/favicon.ico", summary="Favicon")
+async def get_favicon():
+    """
+    Serves the favicon.ico file.
+    """
+    try:
+        # Assumes favicon.ico is in the root directory
+        with open("favicon.ico", "rb") as f:
+            return Response(content=f.read(), media_type="image/x-icon")
+    except FileNotFoundError:
+        # Return a 404 if not found, or a default empty favicon
+        raise HTTPException(status_code=404, detail="Favicon not found.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error serving favicon: {str(e)}")
 
 
 # --- CORS Configuration ---
@@ -60,15 +98,23 @@ async def startup_event():
     """
     print("Application startup: Initializing model and database...")
     try:
-        chatbot_core.init_db() # Initialize the SQLite database (creates tables if not exists and populates KB)
+        chatbot_core.init_db() # Initialize the PostgreSQL database connection pool
         chatbot_core.load_llama_model() # Load the Llama 3.1 8B Instruct model
-        # IMPORTANT: This call will now also generate embeddings for any *new* KB entries
-        # added via the admin panel that might not have embeddings yet.
-        chatbot_core.generate_and_store_embeddings() 
         print("Startup complete: Model loaded, database ready, and embeddings generated.")
     except Exception as e:
         print(f"CRITICAL ERROR during startup: {e}")
         raise
+
+# NEW: Event for Shutdown to gracefully close DB connections
+@app.on_event("shutdown")
+async def shutdown_event():
+    """
+    This function runs when the FastAPI application is shutting down.
+    It's used to perform cleanup tasks like closing database connections.
+    """
+    print("Application shutdown: Closing database connections...")
+    chatbot_core.close_all_connections()
+    print("Application shutdown complete.")
 
 # --- Pydantic Models for Request/Response ---
 class ChatRequest(BaseModel):
@@ -130,4 +176,4 @@ async def reset_conversation_endpoint(user_id: str, client_id: str): # Added cli
         else:
             raise HTTPException(status_code=500, detail="Failed to reset history.")
     except RuntimeError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)}")
