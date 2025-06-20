@@ -6,7 +6,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware 
 from pydantic import BaseModel 
 from fastapi.responses import HTMLResponse 
-# Removed: from fastapi.staticfiles import StaticFiles # NO LONGER NEEDED
+from starlette.responses import Response # For favicon.ico response type
+# Removed: from fastapi.staticfiles import StaticFiles # THIS LINE IS REMOVED
 
 import chatbot_core 
 import admin_api 
@@ -16,7 +17,7 @@ from typing import Optional
 from dotenv import load_dotenv
 
 # Load environment variables from .env file (for local dev)
-# On EC2, production.env should be sourced or env vars set globally
+# Ensure your .env file is in the same directory as main.py
 load_dotenv() 
 
 # --- FastAPI App Initialization ---
@@ -29,7 +30,7 @@ app = FastAPI(
 # NEW: Include the admin_api router in the main app
 app.include_router(admin_api.router)
 
-# Removed: app.mount("/static", StaticFiles(directory="static"), name="static") # NO LONGER NEEDED
+# Removed: app.mount("/static", StaticFiles(directory="static"), name="static") # THIS LINE IS REMOVED
 
 # NEW: Endpoint to serve the Admin Dashboard HTML
 @app.get("/admin", response_class=HTMLResponse, summary="Luna Admin Dashboard")
@@ -47,11 +48,13 @@ async def get_admin_dashboard(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error serving admin dashboard: {str(e)}")
 
-# NEW: Endpoint to serve the Chat Widget HTML
+# NEW: Endpoint to serve the Chat Widget HTML (main / endpoint)
+@app.get("/", response_class=HTMLResponse, summary="Luna Chat Widget (Root)")
 @app.get("/widget.html", response_class=HTMLResponse, summary="Luna Chat Widget")
 async def get_widget_html():
     """
     Serves the HTML file for the main chat widget.
+    It can be accessed via / or /widget.html.
     """
     try:
         # Assumes widget.html is in the root directory of the project
@@ -98,7 +101,9 @@ async def startup_event():
     """
     print("Application startup: Initializing model and database...")
     try:
-        chatbot_core.init_db() # Initialize the PostgreSQL database connection pool
+        # Ensure PostgreSQL is running locally via Docker before this.
+        # This will test the connection pool setup.
+        chatbot_core.init_db() 
         chatbot_core.load_llama_model() # Load the Llama 3.1 8B Instruct model
         print("Startup complete: Model loaded, database ready, and embeddings generated.")
     except Exception as e:
@@ -151,7 +156,8 @@ async def chat_endpoint(request: ChatRequest):
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        # FIX: Removed extra '}' from here
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") 
 
 @app.get("/history/{user_id}/{client_id}", response_model=HistoryResponse, summary="Get conversation history for a user and client")
 async def get_conversation_history_endpoint(user_id: str, client_id: str): # Added client_id to path
@@ -163,6 +169,9 @@ async def get_conversation_history_endpoint(user_id: str, client_id: str): # Add
         return {"history": history}
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e: # Added missing catch block
+        # FIX: Removed extra '}' from here
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") 
 
 @app.post("/reset/{user_id}/{client_id}", response_model=ResetResponse, summary="Reset conversation history for a user and client")
 async def reset_conversation_endpoint(user_id: str, client_id: str): # Added client_id to path
@@ -176,4 +185,20 @@ async def reset_conversation_endpoint(user_id: str, client_id: str): # Added cli
         else:
             raise HTTPException(status_code=500, detail="Failed to reset history.")
     except RuntimeError as e:
-        raise HTTPException(status_code=500, detail=str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e: # Added missing catch block
+        # FIX: Removed extra '}' from here
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.get("/", response_class=HTMLResponse)
+async def serve_widget():
+    """
+    Serves the widget.html file when accessing the root URL.
+    """
+    try:
+        with open("widget.html", "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="widget.html not found.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error serving widget: {str(e)}")

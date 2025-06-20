@@ -14,6 +14,7 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 from typing import Optional, Tuple
 import json
+import time # ADD THIS IMPORT for time.perf_counter()
 
 # NEW: Import our database manager
 from database_manager import db_manager, close_db_pool 
@@ -229,18 +230,17 @@ def retrieve_knowledge(client_id: str, query: str) -> Tuple[Optional[str], dict]
         "rag_threshold_used": 0.5, # Default threshold
         "strict_rag_mode": False,
         "embedding_model_version": "all-MiniLM-L6-v2",
-        "kb_entries_searched": 0,
         "query_preprocessing_time": 0.0, 
         "total_rag_time": 0.0 
     }
     
-    rag_start_time = datetime.now()
+    rag_start_time = time.perf_counter() # Use perf_counter for RAG timing
 
     if sentence_model is None:
         print("WARNING: Sentence Transformer model not loaded. Semantic RAG not available.")
         debug_info["rag_attempted"] = False
         debug_info["rag_reason"] = "Semantic model not loaded."
-        debug_info["total_rag_time"] = (datetime.now() - rag_start_time).total_seconds()
+        debug_info["total_rag_time"] = (time.perf_counter() - rag_start_time) # Use perf_counter
         return None, debug_info
 
     try:
@@ -307,30 +307,30 @@ def retrieve_knowledge(client_id: str, query: str) -> Tuple[Optional[str], dict]
                         
                         if should_use_rag:
                             print(f"DEBUG: Semantic RAG Match found for client '{client_id}' with Cosine Similarity {highest_similarity:.2f}: '{best_match_answer}' (Appropriate)")
-                            debug_info["total_rag_time"] = (datetime.now() - rag_start_time).total_seconds()
+                            debug_info["total_rag_time"] = (time.perf_counter() - rag_start_time) # Use perf_counter
                             return best_match_answer, debug_info
                         else:
                             print(f"DEBUG: Semantic RAG Match found for client '{client_id}' with Cosine Similarity {highest_similarity:.2f} but deemed INAPPROPRIATE: '{best_match_answer}'. Reason: {reason}")
-                            debug_info["total_rag_time"] = (datetime.now() - rag_start_time).total_seconds()
+                            debug_info["total_rag_time"] = (time.perf_counter() - rag_start_time) # Use perf_counter
                             return None, debug_info # Return None to trigger LLM general response
                     else:
                         # Strict RAG mode is ON, bypass appropriateness check
                         debug_info["rag_appropriate"] = True
                         debug_info["rag_reason"] += " Strict RAG mode enabled, appropriateness check bypassed."
                         print(f"DEBUG: Semantic RAG Match found for client '{client_id}' with Cosine Similarity {highest_similarity:.2f}: '{best_match_answer}' (Strict RAG Mode ON)")
-                        debug_info["total_rag_time"] = (datetime.now() - rag_start_time).total_seconds()
+                        debug_info["total_rag_time"] = (time.perf_counter() - rag_start_time) # Use perf_counter
                         return best_match_answer, debug_info
                 
                 print(f"DEBUG: No sufficient semantic RAG match found for client '{client_id}' for query: '{query}' (highest similarity: {highest_similarity:.2f})")
                 debug_info["rag_reason"] = f"Highest similarity {highest_similarity:.2f} below threshold ({rag_threshold:.2f})."
-                debug_info["total_rag_time"] = (datetime.now() - rag_start_time).total_seconds()
+                debug_info["total_rag_time"] = (time.perf_counter() - rag_start_time) # Use perf_counter
                 return None, debug_info # No strong match, return None
 
     except Exception as e:
         print(f"ERROR: Error during embedding-based knowledge retrieval: {e}")
         debug_info["rag_attempted"] = True
         debug_info["rag_reason"] = f"Error during RAG: {e}"
-        debug_info["total_rag_time"] = (datetime.now() - rag_start_time).total_seconds()
+        debug_info["total_rag_time"] = (time.perf_counter() - rag_start_time) # Use perf_counter
         return None, debug_info
 
 
@@ -342,13 +342,13 @@ def get_llama_response(user_id: str, client_id: str, new_message: str) -> Tuple[
     This now interacts with the PostgreSQL database.
     """
     # Track overall response time
-    llm_start_time = datetime.now()
+    llm_start_time = time.perf_counter() # FIXED: Use time.perf_counter() for precise timing
 
     debug_info_for_response = {
         "llm_response_strategy": "general_llm_generation", # Default strategy
         "rag_data": {}, # Will be populated by retrieve_knowledge
         "final_llm_time": 0.0,
-        "total_request_time": 0.0
+        "total_request_time": 0.0 # Will be populated before DB write
     }
 
     if model is None or tokenizer is None:
@@ -360,26 +360,24 @@ def get_llama_response(user_id: str, client_id: str, new_message: str) -> Tuple[
         normalized_message = new_message.lower()
         if any(p_word in normalized_message for p_word in profane_words):
             debug_info_for_response["llm_response_strategy"] = "profanity_filter"
-            debug_info_for_response["total_request_time"] = (datetime.now() - llm_start_time).total_seconds()
+            # Calculate time just before returning for profanity filter
+            end_time = time.perf_counter() # FIXED: Use time.perf_counter()
+            debug_info_for_response["total_request_time"] = (end_time - llm_start_time) # FIXED: No .total_seconds() needed
             return "I'm sorry, but I cannot respond to that kind of language. Please keep our conversation professional.", debug_info_for_response
 
         # Retrieve last 8 messages for context (last 4 exchanges)
         messages_from_db = []
         with db_manager.get_connection() as conn:
             with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-                # NEW: Query from chat_history table in PostgreSQL
-                # NOTE: chat_history now has a single 'message' column for both user and bot turns
                 cursor.execute("SELECT message, timestamp FROM chat_history WHERE user_id = %s AND client_id = %s ORDER BY timestamp DESC LIMIT 8", (user_id, client_id))
                 history_rows = cursor.fetchall()
                 
-                # Reconstruct chat history for LLM
-                for row in reversed(history_rows): # Process in chronological order
+                for row in reversed(history_rows):
                     msg_content = row['message']
                     if msg_content.startswith("User: "):
                         messages_from_db.append({"role": "user", "content": msg_content.replace("User: ", "")})
                     elif msg_content.startswith("Bot: "):
                         messages_from_db.append({"role": "assistant", "content": msg_content.replace("Bot: ", "")})
-
 
         # --- RAG: Attempt to retrieve answer from knowledge base first (using semantic search) ---
         kb_answer, rag_debug_data = retrieve_knowledge(client_id, new_message)
@@ -493,45 +491,46 @@ When asked "who is your creator?" or "who created you?" or similar questions abo
 
         print(f"DEBUG: Final Response (after post-processing): '{response}'")
 
-        current_time = datetime.now() # Get current time as datetime object for PostgreSQL
+        # FIXED: Capture end time BEFORE database operations
+        end_time_perf = time.perf_counter() # Use perf_counter() here
+        debug_info_for_response["total_request_time"] = (end_time_perf - llm_start_time) # No .total_seconds() needed
+        # Ensure final_llm_time is calculated correctly based on the new total_request_time
+        debug_info_for_response["final_llm_time"] = debug_info_for_response["total_request_time"] - debug_info_for_response["rag_data"].get("total_rag_time", 0.0)
+
+        # Capture the current wall-clock time for database timestamp (separate from perf_counter)
+        db_timestamp = datetime.now() 
         
         # Log the user query and bot response to chat_history table
         with db_manager.get_connection() as conn:
             with conn.cursor() as cursor:
-                # NEW: Insert into PostgreSQL chat_history table
-                # NOTE: Insert into the single 'message' column.
                 cursor.execute(
                     "INSERT INTO chat_history (user_id, client_id, message, timestamp) VALUES (%s, %s, %s, %s)",
-                    (user_id, client_id, f"User: {new_message}", current_time)
+                    (user_id, client_id, f"User: {new_message}", db_timestamp)
                 )
                 cursor.execute(
                     "INSERT INTO chat_history (user_id, client_id, message, timestamp) VALUES (%s, %s, %s, %s)",
-                    (user_id, client_id, f"Bot: {response}", current_time)
+                    (user_id, client_id, f"Bot: {response}", db_timestamp)
                 )
                 
-                # NEW: Log analytics event for each query to analytics_events table
+                # Log analytics event for each query to analytics_events table
                 event_data = {
                     "query": new_message,
                     "response": response,
-                    "debug_info": debug_info_for_response # Store the full debug info
+                    "debug_info": debug_info_for_response # This now contains the correctly calculated timing!
                 }
                 cursor.execute(
                     "INSERT INTO analytics_events (client_id, user_id, timestamp, event_type, event_data) VALUES (%s, %s, %s, %s, %s)",
-                    (client_id, user_id, current_time, "query", json.dumps(event_data)) # json.dumps for JSONB
+                    (client_id, user_id, db_timestamp, "query", json.dumps(event_data)) # json.dumps for JSONB
                 )
                 conn.commit()
-
-
-        # Calculate total request time
-        debug_info_for_response["final_llm_time"] = (datetime.now() - llm_start_time).total_seconds() - debug_info_for_response["rag_data"].get("total_rag_time", 0.0)
-        debug_info_for_response["total_request_time"] = (datetime.now() - llm_start_time).total_seconds()
-
 
         return response, debug_info_for_response
     except Exception as e:
         print(f"ERROR: Error during Llama inference or database interaction: {e}")
         debug_info_for_response["llm_response_strategy"] = "error"
-        debug_info_for_response["total_request_time"] = (datetime.now() - llm_start_time).total_seconds()
+        # Even on error, try to capture total time up to the point of error
+        end_time_on_error_perf = time.perf_counter() # FIXED: Use perf_counter()
+        debug_info_for_response["total_request_time"] = (end_time_on_error_perf - llm_start_time) # FIXED: No .total_seconds() needed
         raise RuntimeError(f"Chatbot inference error: {str(e)}")
 
 # --- Utility Functions for History Management ---

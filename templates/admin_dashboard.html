@@ -8,189 +8,741 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #1a1a1a; /* Dark background */
-            color: #e0e0e0; /* Light text color */
-            min-height: 100vh;
+        /* Enhanced Styles - Using CSS Variables for better theming */
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2a2a2a;
+            --bg-tertiary: #3a3a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --accent-primary: #007bff; /* Blue */
+            --accent-success: #28a745; /* Green */
+            --accent-warning: #ffc107; /* Orange/Yellow */
+            --accent-danger: #dc3545; /* Red */
+            --border-color: #4a4a4a;
+            --transition: all 0.2s ease;
+        }
+
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            line-height: 1.6;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
+
         .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 1.5rem;
-            background-color: #2a2a2a; /* Slightly lighter dark for container */
-            border-radius: 1rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            flex-grow: 1; /* Allows container to take available space */
         }
-        h1, h2, h3 {
-            color: #ffffff;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
+
+        /* --- Loading States --- */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 1rem;
         }
-        .section {
-            background-color: #3a3a3a;
-            border-radius: 0.75rem;
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden { /* Utility class for hiding elements */
+            display: none !important;
+        }
+
+        /* --- Header --- */
+        .dashboard-header {
+            background: var(--bg-secondary);
+            border-radius: 12px;
             padding: 1.5rem;
             margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
         }
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #a0a0a0;
-        }
-        input[type="text"], input[type="email"], textarea, select {
-            width: 100%;
-            padding: 0.75rem;
-            margin-bottom: 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid #4a4a4a;
-            background-color: #4a4a4a;
-            color: #e0e0e0;
-            outline: none;
-        }
-        input[type="text"]:focus, input[type="email"]:focus, textarea:focus, select:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            font-weight: 600;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .button-red {
-            background-color: #dc3545;
-        }
-        .button-red:hover {
-            background-color: #c82333;
-        }
-        .table-container {
-            overflow-x: auto;
-            margin-top: 1.5rem;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: #4a4a4a;
-            border-radius: 0.75rem;
-            overflow: hidden; /* For rounded corners */
-        }
-        th, td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid #3a3a3a;
-        }
-        th {
-            background-color: #5a5a5a;
-            color: #ffffff;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.875rem;
-        }
-        tr:last-child td {
-            border-bottom: none;
-        }
-        .tab-buttons {
+
+        .header-content {
             display: flex;
-            margin-bottom: 1.5rem;
-            border-bottom: 2px solid #4a4a4a;
-        }
-        .tab-button {
-            padding: 0.75rem 1.5rem;
-            background-color: #3a3a3a;
-            border: none;
-            border-radius: 0.5rem 0.5rem 0 0;
-            cursor: pointer;
-            color: #a0a0a0;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-        .tab-button:hover:not(.active) {
-            background-color: #4a4a4a;
-            color: #e0e0e0;
-        }
-        .tab-button.active {
-            background-color: #2a2a2a;
-            color: #ffffff;
-            border-bottom: 2px solid #007bff;
-            transform: translateY(2px);
-        }
-        .tab-content {
-            padding-top: 1.5rem;
-            border-top: 1px solid #4a4a4a; /* To hide duplicated border from tab-buttons */
-            background-color: #2a2a2a;
-        }
-        .metric-card {
-            background-color: #3a3a3a;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
         }
-        .metric-card h3 {
-            font-size: 1rem;
-            margin-bottom: 0.5rem;
-            color: #a0a0a0;
+
+        .header-content h1 {
+            margin-bottom: 0; /* Override default h1 margin */
         }
-        .metric-card p {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #ffffff;
-            line-height: 1;
-        }
-        .metric-card span {
-            font-size: 1.25rem;
-            font-weight: 500;
-            color: #007bff;
-        }
-        .chart-container {
-            background-color: #3a3a3a;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            height: 300px; /* Fixed height for charts */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        /* Styling for the client selector dropdown */
-        .client-select-analytics {
-            background-color: #4a4a4a;
-            border: 1px solid #5a5a5a;
-            color: #e0e0e0;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            margin-right: 1rem;
-            cursor: pointer;
-        }
-        .period-select-analytics {
-             background-color: #4a4a4a;
-            border: 1px solid #5a5a5a;
-            color: #e0e0e0;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-        }
-         .select-group {
+
+        .header-status {
             display: flex;
             align-items: center;
             gap: 1rem;
-            margin-bottom: 1.5rem;
         }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 0.875rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-unknown { background: var(--text-muted); }
+        .status-good { background: var(--accent-success); }
+        .status-warning { background: var(--accent-warning); }
+        .status-error { background: var(--accent-danger); }
+
+        /* --- Navigation Tabs --- */
+        .tab-navigation {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .tab-button:hover:not(.active) {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .tab-button.active {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--accent-primary);
+            transform: translateY(2px);
+        }
+
+        .tab-icon {
+            font-size: 1.2rem;
+        }
+
+        /* --- Content Areas --- */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .dashboard-section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+        }
+
+        .section-header h2 {
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0; /* Override default h2 margin */
+        }
+
+        .section-description {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .section-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* --- Forms --- */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .span-full {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .form-help {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        .form-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+
+        /* --- Buttons --- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center; /* Center text/spinner */
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            min-width: 120px; /* Ensure buttons have consistent width for text/spinner */
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .btn-danger {
+            background: var(--accent-danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px; /* Spinner size */
+            height: 16px;
+        }
+        .btn-spinner .spinner { /* Smaller spinner for buttons */
+            width: 16px;
+            height: 16px;
+            border-width: 2px;
+        }
+        .btn-text.hidden + .btn-spinner {
+             display: inline-block; /* Show spinner */
+        }
+
+
+        /* --- Tables --- */
+        .table-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap; /* Allow controls to wrap on smaller screens */
+        }
+        .search-input, .filter-select {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-tertiary);
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .sortable {
+            cursor: pointer;
+            position: relative;
+            user-select: none; /* Prevent text selection on click */
+        }
+
+        .sortable:hover {
+            background: var(--bg-tertiary);
+        }
+        /* Sort indicators */
+        .sortable .sort-icon {
+            margin-left: 0.5rem;
+            display: inline-block;
+            width: 0;
+            height: 0;
+            vertical-align: middle;
+            transition: transform 0.2s ease;
+        }
+        .sortable.asc .sort-icon::after {
+            content: '▲'; /* Up arrow */
+            font-size: 0.8em;
+            color: var(--accent-primary);
+        }
+        .sortable.desc .sort-icon::after {
+            content: '▼'; /* Down arrow */
+            font-size: 0.8em;
+            color: var(--accent-primary);
+        }
+
+
+        /* --- Table Loading/Empty States --- */
+        .table-loading, .empty-state {
+            padding: 2rem;
+            text-align: center;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .loading-skeleton {
+            background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--border-color) 50%, var(--bg-tertiary) 75%);
+            background-size: 200% 100%;
+            animation: loading-wave 2s infinite;
+            height: 150px; /* Reduced height for table skeleton */
+            border-radius: 8px;
+        }
+
+        @keyframes loading-wave {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+            border: 1px dashed var(--border-color); /* Dashed border for visual cue */
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        .badge { /* Simple badge for industry, etc. */
+            background-color: var(--accent-primary);
+            color: white;
+            padding: 0.2em 0.6em;
+            border-radius: 0.5em;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+
+        /* --- Metrics --- */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .metric-header h3 {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-bottom: 0; /* Override default h3 margin */
+            display: flex; /* For status dot alignment */
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metric-value {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .metric-trend { /* Trend arrows and percentages */
+            font-size: 1.1rem; /* Slightly smaller than value */
+            font-weight: 600;
+        }
+        /* Trend indicator colors */
+        .metric-trend.positive { color: var(--accent-success); }
+        .metric-trend.negative { color: var(--accent-danger); }
+        .metric-trend.neutral { color: var(--text-muted); }
+
+
+        .metric-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-muted); /* Default muted color */
+            margin-top: 1rem; /* Space from value */
+            font-weight: 500;
+        }
+        .metric-footer.good { color: var(--accent-success); }
+        .metric-footer.warning { color: var(--accent-warning); }
+        .metric-footer.error { color: var(--accent-danger); }
+
+
+        /* --- Tooltip specific styles --- */
+        .tooltip-icon {
+            cursor: help;
+            color: var(--text-muted); /* Grey color for the 'i' */
+            font-style: normal; /* Override default italic for <i> */
+            font-size: 0.8em; /* Smaller size */
+            position: relative; /* Crucial for absolute positioning of tooltip-box inside it */
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 0.25rem;
+            border: 1px solid var(--text-muted);
+            border-radius: 50%;
+            width: 1.2em;
+            height: 1.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tooltip-box {
+            visibility: hidden;
+            background-color: #5a5a5a; /* Darker grey for tooltip background */
+            color: #ffffff;
+            text-align: center;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            position: absolute;
+            z-index: 1;
+            /* Corrected positioning for better screen fit */
+            top: 150%; /* Position below the icon, adjusted from 125% to leave more space */
+            left: 50%;
+            transform: translateX(-50%); /* Keeps it horizontally centered relative to the icon */
+            white-space: normal; /* Allow text to wrap */
+            
+            /* ADJUSTED FOR NO SCROLLBAR AND WIDER FIT */
+            width: auto; /* Allow width to be determined by content, up to max-width */
+            min-width: 150px; /* Ensure it's not too narrow for short text */
+            max-width: 300px; /* Increased max-width for longer text, adjust as needed */
+            
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+
+            /* REMOVED: max-height and overflow-y to eliminate scrollbar */
+        }
+        /* Corrected CSS selector for tooltip visibility: now targets descendant */
+        .tooltip-icon:hover .tooltip-box {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip-box::after {
+            content: "";
+            position: absolute;
+            top: 100%; /* At the bottom of the tooltip */
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #5a5a5a transparent transparent transparent;
+        }
+
+        /* --- Charts --- */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            height: 350px; /* Fixed height for charts */
+            display: flex;
+            flex-direction: column; /* Allow header and canvas to stack */
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .chart-header h3 {
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0; /* Override default h3 margin */
+        }
+        .chart-container canvas {
+            flex-grow: 1; /* Make canvas take available height */
+        }
+
+        /* --- Insights Panel --- */
+        .insights-panel {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+        .insights-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        .insight-card {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--accent-primary); /* Example */
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        .insight-card.warning { border-left-color: var(--accent-warning); }
+        .insight-card.danger { border-left-color: var(--accent-danger); }
+        .insight-card.good { border-left-color: var(--accent-success); } /* Added good color */
+        .insight-loading {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* --- Settings Tab --- */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .setting-card {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        .setting-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+        .setting-card p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        .setting-input, .setting-slider {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.6rem;
+            color: var(--text-secondary);
+        }
+        .setting-slider {
+            -webkit-appearance: none;
+            height: 8px;
+            background: var(--border-color);
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        .setting-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            cursor: pointer;
+        }
+        .slider-value {
+            display: block;
+            text-align: right;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        /* --- Toast Notifications --- */
+        .toast-container {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toast {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            min-width: 300px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transform: translateX(120%); /* Start off-screen */
+            opacity: 0;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .toast-success {
+            border-left: 4px solid var(--accent-success);
+        }
+
+        .toast-error {
+            border-left: 4px solid var(--accent-danger);
+        }
+
+        .toast-warning {
+            border-left: 44px solid var(--accent-warning); /* FIX: This was 44px, should be 4px */
+        }
+
+        /* --- Modals --- */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -202,15 +754,16 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            transition: opacity 0.3s ease;
         }
         .modal-content {
-            background: #2a2a2a;
+            background: var(--bg-secondary);
             padding: 2rem;
             border-radius: 1rem;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.7);
             max-width: 400px;
             text-align: center;
-            color: #e0e0e0;
+            color: var(--text-secondary);
         }
         .modal-buttons {
             margin-top: 1.5rem;
@@ -218,634 +771,1399 @@
             justify-content: center;
             gap: 1rem;
         }
-        .modal-buttons button {
-            padding: 0.5rem 1.5rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
+
+        /* Responsive Design (already in previous CSS, keep for integrity) */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .tab-navigation {
+                flex-wrap: wrap;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="text-3xl mb-4">Luna Admin Dashboard</h1>
-
-        <div class="tab-buttons">
-            <button class="tab-button active" onclick="openTab(event, 'ClientManagement')">Client & KB Management</button>
-            <button class="tab-button" onclick="openTab(event, 'Analytics')">Analytics</button>
-        </div>
-
-        <div id="ClientManagement" class="tab-content">
-            <div class="section">
-                <h2 class="text-2xl mb-4">Create New Client</h2>
-                <form id="create-client-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="new-client-id">Client ID (e.g., 'acme_corp'):</label>
-                        <input type="text" id="new-client-id" required pattern="^[a-z0-9_]+$" title="Lowercase letters, numbers, and underscores only.">
-                    </div>
-                    <div>
-                        <label for="new-business-name">Business Name:</label>
-                        <input type="text" id="new-business-name" required>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label for="new-industry">Industry:</label>
-                        <input type="text" id="new-industry" required>
-                    </div>
-                    <div class="md:col-span-2">
-                        <button type="submit">Create Client</button>
-                    </div>
-                </form>
-            </div>
-
-            <div class="section">
-                <h2 class="text-2xl mb-4">Existing Clients</h2>
-                <div class="table-container">
-                    <table id="clients-table">
-                        <thead>
-                            <tr>
-                                <th>Client ID</th>
-                                <th>Business Name</th>
-                                <th>Industry</th>
-                                <th>Created At</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="section">
-                <h2 class="text-2xl mb-4">Knowledge Base Management</h2>
-                <div class="mb-4 flex items-center">
-                    <label for="kb-client-selector" class="mr-2">Select Client:</label>
-                    <select id="kb-client-selector" class="px-3 py-2 rounded-md bg-gray-700 border-gray-600 text-white text-sm flex-grow">
-                        </select>
-                </div>
-
-                <div id="kb-management-content" class="hidden">
-                    <h3 class="text-xl mb-4">Add New KB Entry for <span id="current-kb-client-name" class="font-semibold text-blue-400"></span></h3>
-                    <form id="add-kb-form">
-                        <div>
-                            <label for="kb-question">Question:</label>
-                            <textarea id="kb-question" rows="2" required></textarea>
-                        </div>
-                        <div>
-                            <label for="kb-answer">Answer:</label>
-                            <textarea id="kb-answer" rows="3" required></textarea>
-                        </div>
-                        <button type="submit">Add Entry</button>
-                    </form>
-
-                    <h3 class="text-xl mt-8 mb-4">Existing KB Entries for <span id="existing-kb-client-name" class="font-semibold text-blue-400"></span></h3>
-                    <div class="table-container">
-                        <table id="knowledge-base-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Question</th>
-                                    <th>Answer</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="Analytics" class="tab-content hidden">
-            <h2 class="text-2xl mb-4">Luna Bot Analytics</h2>
-            <div class="select-group">
-                <label for="analytics-client-selector" class="text-sm font-medium">Select Business:</label>
-                <select id="analytics-client-selector" class="client-select-analytics">
-                    <option value="all">All Clients</option>
-                    </select>
-
-                <label for="analytics-period-selector" class="text-sm font-medium">Period:</label>
-                <select id="analytics-period-selector" class="period-select-analytics">
-                    <option value="7d" selected>Last 7 Days</option>
-                    <option value="30d">Last 30 Days</option>
-                    <option value="all">All Time</option>
-                </select>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <div class="metric-card">
-                    <h3>Total Queries</h3>
-                    <p id="total-queries">0</p>
-                </div>
-                <div class="metric-card">
-                    <h3>RAG Hit Rate</h3>
-                    <p id="rag-hit-rate">0<span>%</span></p>
-                </div>
-                <div class="metric-card">
-                    <h3>Avg. Response Time</h3>
-                    <p id="avg-response-time">0<span>s</span></p>
-                </div>
-                <div class="metric-card">
-                    <h3>Inappropriate Triggers</h3>
-                    <p id="inappropriate-triggers">0</p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="chart-container">
-                    <canvas id="conversationVolumeChart"></canvas>
-                </div>
-                <div class="chart-container">
-                    <canvas id="ragHitRateChart"></canvas>
-                </div>
-                <div class="chart-container">
-                    <canvas id="responseTimeChart"></canvas>
-                </div>
-                 <div class="chart-container">
-                    <canvas id="followUpQuestionsChart"></canvas>
-                </div>
-            </div>
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p class="mt-4 text-white">Loading...</p>
         </div>
     </div>
 
-    <script>
-        const API_BASE_URL = 'http://localhost:8000';
-
-        // --- DOM Elements ---
-        const createClientForm = document.getElementById('create-client-form');
-        const newClientIdInput = document.getElementById('new-client-id');
-        const newBusinessNameInput = document.getElementById('new-business-name');
-        const newIndustryInput = document.getElementById('new-industry');
-        const clientsTableBody = document.querySelector('#clients-table tbody');
-        const kbClientSelector = document.getElementById('kb-client-selector');
-        const kbManagementContent = document.getElementById('kb-management-content');
-        const currentKbClientName = document.getElementById('current-kb-client-name');
-        const existingKbClientName = document.getElementById('existing-kb-client-name');
-        const addKbForm = document.getElementById('add-kb-form');
-        const kbQuestionInput = document.getElementById('kb-question');
-        const kbAnswerInput = document.getElementById('kb-answer');
-        const knowledgeBaseTableBody = document.querySelector('#knowledge-base-table tbody');
-
-        // Analytics Elements
-        const analyticsClientSelector = document.getElementById('analytics-client-selector');
-        const analyticsPeriodSelector = document.getElementById('analytics-period-selector');
-        const totalQueriesDisplay = document.getElementById('total-queries');
-        const ragHitRateDisplay = document.getElementById('rag-hit-rate');
-        const avgResponseTimeDisplay = document.getElementById('avg-response-time');
-        const inappropriateTriggersDisplay = document.getElementById('inappropriate-triggers');
-
-        // Chart instances
-        let conversationVolumeChart;
-        let ragHitRateChart;
-        let responseTimeChart;
-        let followUpQuestionsChart; // Placeholder for now
-
-        // --- Utility Functions ---
-        async function fetchData(url, method = 'GET', body = null) {
-            try {
-                const options = { method };
-                if (body) {
-                    options.headers = { 'Content-Type': 'application/json' };
-                    options.body = JSON.stringify(body);
-                }
-                const response = await fetch(url, options);
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.detail || `API error: ${response.status}`);
-                }
-                return data;
-            } catch (error) {
-                console.error('Fetch error:', error);
-                showCustomAlert(`Error: ${error.message}`);
-                throw error;
-            }
-        }
-
-        // Custom alert/confirm modals instead of browser defaults
-        function createModal(message, type = 'alert') {
-            const modalOverlay = document.createElement('div');
-            modalOverlay.className = 'modal-overlay';
-            modalOverlay.innerHTML = `
-                <div class="modal-content">
-                    <p>${message}</p>
-                    <div class="modal-buttons">
-                        <button id="modal-ok" class="button-blue">OK</button>
-                        ${type === 'confirm' ? '<button id="modal-cancel" class="button-red">Cancel</button>' : ''}
+    <div class="container">
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1 class="text-3xl font-bold">Luna Admin Dashboard</h1>
+                <div class="header-status">
+                    <div class="status-indicator" id="api-status">
+                        <span class="status-dot status-unknown"></span>
+                        <span class="status-text">Checking API...</span>
                     </div>
                 </div>
-            `;
-            document.body.appendChild(modalOverlay);
+            </div>
+        </header>
 
-            return new Promise(resolve => {
-                document.getElementById('modal-ok').onclick = () => {
-                    modalOverlay.remove();
-                    resolve(true);
+        <nav class="tab-navigation">
+            <button class="tab-button active" data-tab="client-management">
+                <span class="tab-icon">👥</span>
+                Client & KB Management
+            </button>
+            <button class="tab-button" data-tab="analytics">
+                <span class="tab-icon">📊</span>
+                Analytics
+            </button>
+            <button class="tab-button" data-tab="settings">
+                <span class="tab-icon">⚙️</span>
+                Settings
+            </button>
+        </nav>
+
+        <div id="client-management" class="tab-content active">
+            <section class="dashboard-section">
+                <div class="section-header">
+                    <h2>Create New Client</h2>
+                    <p class="section-description">Add a new business to Luna's customer service system</p>
+                </div>
+                
+                <form id="create-client-form" class="form-grid">
+                    <div class="form-group">
+                        <label for="new-client-id">Client ID</label>
+                        <input type="text" id="new-client-id" name="client_id" placeholder="e.g., acme_corp" 
+                               pattern="^[a-z0-9_]+$" title="Lowercase letters, numbers, and underscores only" required>
+                        <span class="form-help">Used in API calls - cannot be changed later</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="new-business-name">Business Name</label>
+                        <input type="text" id="new-business-name" name="business_name" placeholder="Acme Corporation" required>
+                    </div>
+                    
+                    <div class="form-group span-full">
+                        <label for="new-industry">Industry</label>
+                        <select id="new-industry" name="industry" required>
+                            <option value="">Select Industry</option>
+                            <option value="Technology">Technology</option>
+                            <option value="Healthcare">Healthcare</option>
+                            <option value="Finance">Finance</option>
+                            <option value="Retail">Retail</option>
+                            <option value="Manufacturing">Manufacturing</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions span-full">
+                        <button type="submit" class="btn btn-primary" id="create-client-btn">
+                            <span class="btn-text">Create Client</span>
+                            <span class="btn-spinner hidden spinner"></span>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="dashboard-section">
+                <div class="section-header">
+                    <h2>Existing Clients</h2>
+                    <div class="section-actions">
+                        <button class="btn btn-secondary" onclick="dashboard.clients.loadClients()">
+                            <span class="refresh-icon">🔄</span>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-controls">
+                    <input type="search" id="client-search" placeholder="Search clients..." class="search-input">
+                    <select id="industry-filter" class="filter-select">
+                        <option value="">All Industries</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <div id="clients-loading" class="table-loading hidden">
+                        <div class="loading-skeleton"></div>
+                    </div>
+                    
+                    <div id="clients-empty" class="empty-state hidden">
+                        <div class="empty-icon">👥</div>
+                        <h3>No Clients Yet</h3>
+                        <p>Create your first client to get started with Luna</p>
+                    </div>
+                    
+                    <table id="clients-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="client_id">Client ID <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort="business_name">Business Name <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort="industry">Industry <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort="created_at">Created <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort="kb_entries">KB Entries <span class="sort-icon"></span></th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="dashboard-section">
+                <div class="section-header">
+                    <h2>Knowledge Base Management</h2>
+                    <p class="section-description">Manage Q&A content for your clients</p>
+                </div>
+
+                <div class="kb-selector">
+                    <label for="kb-client-selector">Select Client:</label>
+                    <select id="kb-client-selector" class="client-select">
+                        <option value="">-- Select Client --</option>
+                    </select>
+                </div>
+
+                <div id="kb-management-content" class="hidden">
+                    <div class="kb-stats metrics-grid"> <div class="stat-card metric-card"> <span class="stat-number metric-number" id="kb-count">0</span>
+                            <span class="stat-label text-muted">KB Entries</span>
+                        </div>
+                        <div class="stat-card metric-card">
+                            <span class="stat-number metric-number" id="kb-coverage">0%</span>
+                            <span class="stat-label text-muted">Query Coverage</span>
+                        </div>
+                    </div>
+
+                    <div class="kb-form-container form-grid span-full"> <h3 class="span-full">Add New KB Entry for <span id="current-kb-client-name" class="font-semibold text-blue-400"></span></h3>
+                        <form id="add-kb-form" class="span-full">
+                            <div class="form-group">
+                                <label for="kb-question">Question</label>
+                                <textarea id="kb-question" placeholder="What question might customers ask?" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="kb-answer">Answer</label>
+                                <textarea id="kb-answer" placeholder="Provide a helpful, professional response" required></textarea>
+                                <span class="form-help">Keep answers concise and customer-friendly</span>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary" id="add-kb-btn">
+                                    <span class="btn-text">Add Entry</span>
+                                    <span class="btn-spinner hidden spinner"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="kb-table-container">
+                        <h3>Existing KB Entries for <span id="existing-kb-client-name" class="font-semibold text-blue-400"></span></h3>
+                        <div class="table-controls"> <input type="search" id="kb-search" placeholder="Search KB entries..." class="search-input">
+                            </div>
+                        <table id="knowledge-base-table" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-sort="question">Question <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort="answer">Answer <span class="sort-icon"></span></th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="analytics" class="tab-content">
+            <section class="dashboard-section">
+                <div class="section-header">
+                    <h2>Analytics Dashboard</h2>
+                    <div class="analytics-controls section-actions"> <select id="analytics-client-selector" class="filter-select">
+                            <option value="all">All Clients</option>
+                        </select>
+                        <select id="analytics-period-selector" class="filter-select">
+                            <option value="7d">Last 7 Days</option>
+                            <option value="30d">Last 30 Days</option>
+                            <option value="all">All Time</option>
+                        </select>
+                        <button class="btn btn-secondary">
+                            Export Report
+                        </button>
+                    </div>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <h3>
+                                <span class="status-dot status-good" id="total-queries-dot"></span> Total Queries
+                            </h3>
+                            <span class="tooltip-icon" data-tooltip="The total number of messages sent to Luna by all users within the selected time period.">
+                                i
+                                <div class="tooltip-box"></div>
+                            </span>
+                        </div>
+                        <div class="metric-value">
+                            <span class="metric-number" id="total-queries"></span> <span class="metric-trend" id="total-queries-trend"></span> </div>
+                        <div class="metric-footer" id="total-queries-footer">
+                            </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <h3>
+                                <span class="status-dot status-good" id="rag-hit-rate-dot"></span> RAG Hit Rate
+                            </h3>
+                            <span class="tooltip-icon" data-tooltip="The percentage of user queries where Luna successfully found and appropriately used relevant information from the knowledge base to form its response.">
+                                i
+                                <div class="tooltip-box"></div>
+                            </span>
+                        </div>
+                        <div class="metric-value">
+                            <span class="metric-number" id="rag-hit-rate"></span> <span class="metric-trend" id="rag-hit-rate-trend"></span> </div>
+                        <div class="metric-footer" id="rag-hit-rate-footer">
+                            </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <h3>
+                                <span class="status-dot status-good" id="avg-response-time-dot"></span> Avg. Response Time
+                            </h3>
+                            <span class="tooltip-icon" data-tooltip="The average time (in seconds) Luna takes to generate a response from the moment a user sends a message, including knowledge base lookup and AI inference.">
+                                i
+                                <div class="tooltip-box"></div>
+                            </span>
+                        </div>
+                        <div class="metric-value">
+                            <span class="metric-number" id="avg-response-time"></span> <span class="metric-trend" id="avg-response-time-trend"></span> </div>
+                        <div class="metric-footer" id="avg-response-time-footer">
+                            </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <h3>
+                                <span class="status-dot status-good" id="inappropriate-triggers-dot"></span> Inappropriate Triggers
+                            </h3>
+                            <span class="tooltip-icon" data-tooltip="The number of times Luna detected a query or a potential knowledge base match that was deemed outside the scope of customer service or inappropriate, and thus responded professionally rather than using the content.">
+                                i
+                                <div class="tooltip-box"></div>
+                            </span>
+                        </div>
+                        <div class="metric-value">
+                            <span class="metric-number" id="inappropriate-triggers"></span> <span class="metric-trend" id="inappropriate-triggers-trend"></span> </div>
+                        <div class="metric-footer" id="inappropriate-triggers-footer">
+                            </div>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3>Conversation Volume</h3>
+                        </div>
+                        <canvas id="conversationVolumeChart"></canvas>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3>RAG Hit Rate Trend</h3>
+                        </div>
+                        <canvas id="ragHitRateChart"></canvas>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3>Avg. Response Time Trend</h3>
+                        </div>
+                        <canvas id="responseTimeChart"></canvas>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3>Avg. Follow-Up Questions (Future)</h3>
+                        </div>
+                        <canvas id="followUpQuestionsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="insights-panel">
+                    <h3>📊 Automated Insights</h3>
+                    <div id="insights-content" class="insights-list">
+                        <div class="insight-loading">Analyzing data...</div>
+                        </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="settings" class="tab-content">
+            <section class="dashboard-section">
+                <div class="section-header">
+                    <h2>System Settings</h2>
+                    <p class="section-description">Configure Luna's behavior and system preferences</p>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="setting-card">
+                        <h3>Analytics Retention</h3>
+                        <p>How long to keep analytics data</p>
+                        <select class="setting-input">
+                            <option value="30">30 days</option>
+                            <option value="90" selected>90 days</option>
+                            <option value="365">1 year</option>
+                            <option value="unlimited">Unlimited</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-card">
+                        <h3>Default RAG Threshold</h3>
+                        <p>Minimum similarity score for knowledge base matches</p>
+                        <input type="range" min="0.1" max="1.0" step="0.1" value="0.7" class="setting-slider">
+                        <span class="slider-value">0.7</span>
+                    </div>
+
+                    <div class="setting-card">
+                        <h3>Response Time Alert</h3>
+                        <p>Alert when response time exceeds threshold</p>
+                        <input type="number" value="3" min="1" max="10" class="setting-input">
+                        <span class="setting-unit">seconds</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <div id="modal-overlay" class="modal-overlay hidden"></div>
+
+    <script>
+        // Modular JavaScript Architecture
+        class Dashboard {
+            constructor() {
+                this.ui = new UIManager(); 
+                this.api = new APIManager(this.ui);
+                this.clients = new ClientManager(this.api, this.ui);
+                this.kb = new KnowledgeBaseManager(this.api, this.ui);
+                this.analytics = new AnalyticsManager(this.api, this.ui);
+
+                this.init();
+            }
+
+            async init() {
+                this.ui.showLoadingOverlay();
+                await this.api.checkConnection();
+                this.setupEventListeners();
+                
+                await this.clients.loadClients(); 
+                this.ui.showTab('client-management'); 
+                this.ui.hideLoadingOverlay(); 
+
+                this.ui.initializeTooltips();
+            }
+
+            setupEventListeners() {
+                document.querySelectorAll('.tab-button').forEach(button => {
+                    button.addEventListener('click', async (e) => {
+                        const tab = e.target.closest('.tab-button').dataset.tab;
+                        this.ui.showTab(tab);
+                        if (tab === 'client-management') {
+                            await this.clients.loadClients();
+                        } else if (tab === 'analytics') {
+                            await this.analytics.updateAnalyticsDashboard();
+                        }
+                        this.ui.initializeTooltips(); 
+                    });
+                });
+
+                document.getElementById('create-client-form').addEventListener('submit', (e) => {
+                    this.clients.createClient(e);
+                });
+                document.getElementById('client-search').addEventListener('input', () => {
+                    this.clients.applyFiltersAndSorting();
+                });
+                document.getElementById('industry-filter').addEventListener('change', () => {
+                    this.clients.applyFiltersAndSorting();
+                });
+                document.querySelectorAll('#clients-table th.sortable').forEach(header => {
+                    header.addEventListener('click', () => {
+                        this.clients.handleSort(header);
+                    });
+                });
+
+                document.getElementById('kb-client-selector').addEventListener('change', (e) => {
+                    this.kb.loadKnowledgeBase(e.target.value);
+                });
+                document.getElementById('add-kb-form').addEventListener('submit', (e) => {
+                    this.kb.addKbEntry(e);
+                });
+                document.getElementById('kb-search').addEventListener('input', () => {
+                    this.kb.applyFiltersAndSorting();
+                });
+                document.querySelectorAll('#knowledge-base-table th.sortable').forEach(header => {
+                    header.addEventListener('click', () => {
+                        this.kb.handleSort(header);
+                    });
+                });
+
+                document.getElementById('analytics-client-selector').addEventListener('change', (e) => {
+                    this.analytics.updateAnalyticsDashboard();
+                });
+                document.getElementById('analytics-period-selector').addEventListener('change', (e) => {
+                    this.analytics.updateAnalyticsDashboard();
+                });
+            }
+        }
+
+        class APIManager {
+            constructor(ui) {
+                const hostname = window.location.hostname;
+                this.baseURL = hostname === 'localhost' || hostname === '127.0.0.1' 
+                    ? 'http://localhost:8000' 
+                    : `http://${hostname}:8000`;
+                this.isConnected = false;
+                this.ui = ui;
+            }
+
+            async checkConnection() {
+                try {
+                    const response = await fetch(`${this.baseURL}/`);
+                    this.isConnected = response.ok;
+                    this.ui.updateApiStatus(this.isConnected);
+                    if (!this.isConnected) {
+                        this.ui.showToast('API Disconnected. Please ensure the backend server is running.', 'error');
+                    }
+                } catch (error) {
+                    this.isConnected = false;
+                    this.ui.updateApiStatus(false);
+                    this.ui.showToast('Could not connect to the API. Check network and server status.', 'error');
+                }
+            }
+
+            async request(endpoint, options = {}) {
+                if (!this.isConnected) {
+                    this.ui.showToast('API is disconnected. Cannot make request.', 'error');
+                    throw new Error('API Disconnected');
+                }
+
+                const config = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    ...options
                 };
-                if (type === 'confirm') {
-                    document.getElementById('modal-cancel').onclick = () => {
-                        modalOverlay.remove();
-                        resolve(false);
+
+                try {
+                    const response = await fetch(`${this.baseURL}${endpoint}`, config);
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        const errorMessage = data.detail || `API Error: ${response.status} - ${response.statusText}`;
+                        this.ui.showToast(`Request to ${endpoint} failed: ${errorMessage}`, 'error');
+                        throw new Error(errorMessage);
+                    }
+                    
+                    return data;
+                } catch (error) {
+                    console.error(`API Request failed: ${endpoint}`, error);
+                    this.ui.showToast(`Network error for ${endpoint}: ${error.message}`, 'error');
+                    throw error;
+                }
+            }
+        }
+
+        class UIManager {
+            constructor() {
+                this.loadingOverlay = document.getElementById('loading-overlay');
+                this.toastContainer = document.getElementById('toast-container');
+                this.apiStatusElement = document.getElementById('api-status');
+                this.modalOverlay = document.getElementById('modal-overlay');
+            }
+
+            showTab(tabId) {
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelectorAll('.tab-button').forEach(button => {
+                    button.classList.remove('active');
+                });
+                
+                document.getElementById(tabId).classList.add('active');
+                document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            }
+
+            showLoadingOverlay() {
+                this.loadingOverlay.classList.remove('hidden');
+            }
+
+            hideLoadingOverlay() {
+                this.loadingOverlay.classList.add('hidden');
+            }
+
+            showToast(message, type = 'success') {
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+                toast.innerHTML = `<p>${message}</p>`;
+                
+                this.toastContainer.appendChild(toast);
+                
+                setTimeout(() => toast.classList.add('show'), 10);
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    toast.addEventListener('transitionend', () => toast.remove());
+                }, 5000);
+            }
+
+            async createModal(message, type = 'alert') {
+                this.modalOverlay.classList.remove('hidden');
+                this.modalOverlay.innerHTML = `
+                    <div class="modal-content">
+                        <p>${message}</p>
+                        <div class="modal-buttons">
+                            <button id="modal-ok" class="btn btn-primary">OK</button>
+                            ${type === 'confirm' ? '<button id="modal-cancel" class="btn btn-secondary">Cancel</button>' : ''}
+                        </div>
+                    </div>
+                `;
+
+                return new Promise(resolve => {
+                    document.getElementById('modal-ok').onclick = () => {
+                        this.modalOverlay.classList.add('hidden');
+                        resolve(true);
                     };
-                }
-            });
-        }
-
-        function showCustomAlert(message) {
-            return createModal(message, 'alert');
-        }
-
-        function showCustomConfirm(message) {
-            return createModal(message, 'confirm');
-        }
-
-        // --- Client Management Functions ---
-        async function loadClients() {
-            try {
-                const clients = await fetchData(`${API_BASE_URL}/admin/clients`);
-                clientsTableBody.innerHTML = ''; // Clear existing
-                kbClientSelector.innerHTML = '<option value="">-- Select Client --</option>'; // Clear for KB management
-                analyticsClientSelector.innerHTML = '<option value="all">All Clients</option>'; // Clear for analytics
-
-                clients.forEach(client => {
-                    // Populate Clients Table
-                    const row = clientsTableBody.insertRow();
-                    row.insertCell().textContent = client.client_id;
-                    row.insertCell().textContent = client.business_name;
-                    row.insertCell().textContent = client.industry;
-                    row.insertCell().textContent = new Date(client.created_at).toLocaleString(); // Format date
-                    const actionsCell = row.insertCell();
-                    const deleteButton = document.createElement('button');
-                    deleteButton.textContent = 'Delete';
-                    deleteButton.classList.add('button-red', 'text-sm');
-                    deleteButton.onclick = () => deleteClient(client.client_id, client.business_name);
-                    actionsCell.appendChild(deleteButton);
-
-                    // Populate KB Client Selector
-                    const kbOption = document.createElement('option');
-                    kbOption.value = client.client_id;
-                    kbOption.textContent = client.business_name;
-                    kbClientSelector.appendChild(kbOption);
-
-                    // Populate Analytics Client Selector
-                    const analyticsOption = document.createElement('option');
-                    analyticsOption.value = client.client_id;
-                    analyticsOption.textContent = client.business_name;
-                    analyticsClientSelector.appendChild(analyticsOption);
+                    if (type === 'confirm') {
+                        document.getElementById('modal-cancel').onclick = () => {
+                            this.modalOverlay.classList.add('hidden');
+                            resolve(false);
+                        };
+                    }
                 });
-            } catch (error) {
-                // Error already handled by fetchData
             }
-        }
 
-        async function createClient(event) {
-            event.preventDefault();
-            const clientId = newClientIdInput.value;
-            const businessName = newBusinessNameInput.value;
-            const industry = newIndustryInput.value;
-
-            try {
-                const data = await fetchData(`${API_BASE_URL}/admin/clients`, 'POST', {
-                    client_id: clientId,
-                    business_name: businessName,
-                    industry: industry
-                });
-                showCustomAlert(data.message, 'success');
-                createClientForm.reset();
-                await loadClients(); // Reload clients to show new one
-            } catch (error) {
-                // Error already handled by fetchData
-            }
-        }
-
-        async function deleteClient(clientId, businessName) {
-            const confirmDelete = await showCustomConfirm(`Are you sure you want to delete client "${businessName}" (${clientId}) and ALL its associated data (KB, history, analytics)? This cannot be undone.`);
-            if (confirmDelete) {
-                try {
-                    const data = await fetchData(`${API_BASE_URL}/admin/clients/${clientId}`, 'DELETE');
-                    showCustomAlert(data.message, 'success');
-                    await loadClients(); // Reload clients to remove deleted one
-                    kbManagementContent.classList.add('hidden'); // Hide KB section if current client deleted
-                    knowledgeBaseTableBody.innerHTML = ''; // Clear KB table
-                } catch (error) {
-                    // Error already handled by fetchData
+            updateApiStatus(connected) {
+                const dot = this.apiStatusElement.querySelector('.status-dot');
+                const text = this.apiStatusElement.querySelector('.status-text');
+                
+                if (connected) {
+                    dot.className = 'status-dot status-good';
+                    text.textContent = 'API Connected';
+                } else {
+                    dot.className = 'status-dot status-error';
+                    text.textContent = 'API Disconnected';
                 }
             }
-        }
-
-        // --- Knowledge Base Management Functions ---
-        async function loadKnowledgeBase(clientId) {
-            knowledgeBaseTableBody.innerHTML = ''; // Clear existing
-            if (!clientId) {
-                kbManagementContent.classList.add('hidden');
-                return;
-            }
-
-            try {
-                const kbEntries = await fetchData(`${API_BASE_URL}/admin/clients/${clientId}/knowledge`);
-                kbManagementContent.classList.remove('hidden'); // Show KB section
-                currentKbClientName.textContent = kbClientSelector.options[kbClientSelector.selectedIndex].textContent;
-                existingKbClientName.textContent = kbClientSelector.options[kbClientSelector.selectedIndex].textContent;
-
-                kbEntries.forEach(entry => {
-                    const row = knowledgeBaseTableBody.insertRow();
-                    row.insertCell().textContent = entry.kb_id;
-                    row.insertCell().textContent = entry.question;
-                    row.insertCell().textContent = entry.answer;
-                    const actionsCell = row.insertCell();
-
-                    const editButton = document.createElement('button');
-                    editButton.textContent = 'Edit';
-                    editButton.classList.add('bg-blue-600', 'hover:bg-blue-700', 'text-white', 'py-1', 'px-2', 'rounded', 'text-sm', 'mr-2');
-                    editButton.onclick = () => editKbEntry(clientId, entry.kb_id, entry.question, entry.answer);
-                    actionsCell.appendChild(editButton);
-
-                    const deleteButton = document.createElement('button');
-                    deleteButton.textContent = 'Delete';
-                    deleteButton.classList.add('button-red', 'text-sm');
-                    deleteButton.onclick = () => deleteKbEntry(clientId, entry.kb_id, entry.question);
-                    actionsCell.appendChild(deleteButton);
-                });
-            } catch (error) {
-                // Error already handled by fetchData
-                kbManagementContent.classList.add('hidden');
-            }
-        }
-
-        async function addKbEntry(event) {
-            event.preventDefault();
-            const clientId = kbClientSelector.value;
-            const question = kbQuestionInput.value;
-            const answer = kbAnswerInput.value;
-
-            if (!clientId) {
-                showCustomAlert('Please select a client first.');
-                return;
-            }
-
-            try {
-                const data = await fetchData(`${API_BASE_URL}/admin/clients/${clientId}/knowledge`, 'POST', {
-                    question: question,
-                    answer: answer
-                });
-                showCustomAlert(data.message, 'success');
-                addKbForm.reset();
-                await loadKnowledgeBase(clientId); // Reload KB to show new entry
-            } catch (error) {
-                // Error already handled by fetchData
-            }
-        }
-
-        async function editKbEntry(clientId, kbId, currentQuestion, currentAnswer) {
-            const newQuestion = prompt(`Edit Question (KB ID: ${kbId}):`, currentQuestion);
-            if (newQuestion === null) return; // User cancelled
-            const newAnswer = prompt(`Edit Answer (KB ID: ${kbId}):`, currentAnswer);
-            if (newAnswer === null) return; // User cancelled
-
-            if (newQuestion.trim() === '' || newAnswer.trim() === '') {
-                showCustomAlert('Question and Answer cannot be empty.');
-                return;
-            }
-
-            try {
-                const data = await fetchData(`${API_BASE_URL}/admin/clients/${clientId}/knowledge/${kbId}`, 'PUT', {
-                    question: newQuestion,
-                    answer: newAnswer
-                });
-                showCustomAlert(data.message, 'success');
-                await loadKnowledgeBase(clientId); // Reload KB to show updated entry
-            } catch (error) {
-                // Error already handled by fetchData
-            }
-        }
-
-        async function deleteKbEntry(clientId, kbId, question) {
-            const confirmDelete = await showCustomConfirm(`Are you sure you want to delete KB entry "${question}" (ID: ${kbId})?`);
-            if (confirmDelete) {
-                try {
-                    const data = await fetchData(`${API_BASE_URL}/admin/clients/${clientId}/knowledge/${kbId}`, 'DELETE');
-                    showCustomAlert(data.message, 'success');
-                    await loadKnowledgeBase(clientId); // Reload KB to remove deleted entry
-                } catch (error) {
-                    // Error already handled by fetchData
-                }
-            }
-        }
-
-        // --- Tab Management ---
-        function openTab(evt, tabName) {
-            const tabContents = document.getElementsByClassName("tab-content");
-            for (let i = 0; i < tabContents.length; i++) {
-                tabContents[i].classList.add("hidden");
-            }
-            const tabButtons = document.getElementsByClassName("tab-button");
-            for (let i = 0; i < tabButtons.length; i++) {
-                tabButtons[i].classList.remove("active");
-            }
-            document.getElementById(tabName).classList.remove("hidden");
-            evt.currentTarget.classList.add("active");
-
-            // If switching to Analytics tab, load analytics data
-            if (tabName === 'Analytics') {
-                updateAnalyticsDashboard();
-            }
-        }
-
-        // --- Analytics Functions ---
-
-        // Destroy existing chart instance before creating a new one
-        function destroyChart(chartInstance) {
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
-        }
-
-        async function updateAnalyticsDashboard() {
-            const selectedClientId = analyticsClientSelector.value;
-            const selectedPeriod = analyticsPeriodSelector.value;
-
-            // Fetch summary data
-            try {
-                const summaryUrl = `${API_BASE_URL}/admin/analytics/summary?client_id=${selectedClientId !== 'all' ? selectedClientId : ''}&period=${selectedPeriod}`;
-                const summary = await fetchData(summaryUrl);
-
-                totalQueriesDisplay.textContent = summary.total_queries;
-                ragHitRateDisplay.innerHTML = `${summary.rag_hit_rate}<span>%</span>`;
-                avgResponseTimeDisplay.innerHTML = `${summary.avg_response_time}<span>s</span>`;
-                inappropriateTriggersDisplay.textContent = summary.inappropriate_triggers;
-
-            } catch (error) {
-                console.error("Failed to load analytics summary:", error);
-                // Displays handled by fetchData's showCustomAlert
-            }
-
-            // Fetch trend data (only if period is not 'all')
-            if (selectedPeriod !== 'all') {
-                try {
-                    const trendUrl = `${API_BASE_URL}/admin/analytics/daily_trend?client_id=${selectedClientId !== 'all' ? selectedClientId : ''}&period=${selectedPeriod}`;
-                    const trendData = await fetchData(trendUrl);
-
-                    const dates = trendData.map(d => d.date);
-                    const totalQueriesData = trendData.map(d => d.total_queries);
-                    const ragHitsData = trendData.map(d => d.rag_hits);
-                    const avgResponseTimeData = trendData.map(d => d.avg_response_time);
-
-                    // Conversation Volume Chart
-                    destroyChart(conversationVolumeChart);
-                    const ctxVolume = document.getElementById('conversationVolumeChart').getContext('2d');
-                    conversationVolumeChart = new Chart(ctxVolume, {
-                        type: 'bar',
-                        data: {
-                            labels: dates,
-                            datasets: [{
-                                label: 'Daily Queries',
-                                data: totalQueriesData,
-                                backgroundColor: 'rgba(0, 123, 255, 0.7)',
-                                borderColor: 'rgba(0, 123, 255, 1)',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { title: { display: true, text: 'Daily Conversation Volume', color: '#e0e0e0' } },
-                            scales: {
-                                x: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' } },
-                                y: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' }, beginAtZero: true }
-                            }
-                        }
-                    });
-
-                    // RAG Hit Rate Chart (calculated from totalQueriesData and ragHitsData)
-                    const ragHitRates = totalQueriesData.map((total, index) => 
-                        total > 0 ? (ragHitsData[index] / total) * 100 : 0
-                    );
-                    destroyChart(ragHitRateChart);
-                    const ctxHitRate = document.getElementById('ragHitRateChart').getContext('2d');
-                    ragHitRateChart = new Chart(ctxHitRate, {
-                        type: 'line',
-                        data: {
-                            labels: dates,
-                            datasets: [{
-                                label: 'Daily RAG Hit Rate (%)',
-                                data: ragHitRates,
-                                borderColor: 'rgba(40, 167, 69, 1)',
-                                backgroundColor: 'rgba(40, 167, 69, 0.2)',
-                                borderWidth: 2,
-                                fill: true,
-                                tension: 0.1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { title: { display: true, text: 'Daily RAG Hit Rate Trend', color: '#e0e0e0' } },
-                            scales: {
-                                x: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' } },
-                                y: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' }, beginAtZero: true, max: 100 }
-                            }
-                        }
-                    });
-
-                    // Average Response Time Chart
-                    destroyChart(responseTimeChart);
-                    const ctxResponseTime = document.getElementById('responseTimeChart').getContext('2d');
-                    responseTimeChart = new Chart(ctxResponseTime, {
-                        type: 'line',
-                        data: {
-                            labels: dates,
-                            datasets: [{
-                                label: 'Avg. Response Time (s)',
-                                data: avgResponseTimeData,
-                                borderColor: 'rgba(255, 193, 7, 1)',
-                                backgroundColor: 'rgba(255, 193, 7, 0.2)',
-                                borderWidth: 2,
-                                fill: true,
-                                tension: 0.1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { title: { display: true, text: 'Daily Avg. Response Time Trend', color: '#e0e0e0' } },
-                            scales: {
-                                x: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' } },
-                                y: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' }, beginAtZero: true }
-                            }
-                        }
-                    });
-
-                    // Follow-Up Questions Chart (Placeholder for now)
-                    // This chart will remain empty until the backend logic for follow-up questions is implemented.
-                    // We'll update this in a future iteration.
-                    destroyChart(followUpQuestionsChart);
-                    const ctxFollowUp = document.getElementById('followUpQuestionsChart').getContext('2d');
-                     followUpQuestionsChart = new Chart(ctxFollowUp, {
-                        type: 'line',
-                        data: {
-                            labels: dates,
-                            datasets: [{
-                                label: 'Avg. Follow-Up Questions (Future)',
-                                data: Array(dates.length).fill(0), // All zeros for now
-                                borderColor: 'rgba(23, 162, 184, 1)',
-                                backgroundColor: 'rgba(23, 162, 184, 0.2)',
-                                borderWidth: 2,
-                                fill: true,
-                                tension: 0.1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { title: { display: true, text: 'Daily Avg. Follow-Up Questions (Future)', color: '#e0e0e0' } },
-                            scales: {
-                                x: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' } },
-                                y: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' }, beginAtZero: true }
-                            }
-                        }
-                    });
-
-
-                } catch (error) {
-                    console.error("Failed to load analytics trends:", error);
-                    // Errors handled by fetchData's showCustomAlert
-                }
-            } else {
-                // If "All Time" selected, destroy trend charts as they are not applicable
-                destroyChart(conversationVolumeChart);
-                destroyChart(ragHitRateChart);
-                destroyChart(responseTimeChart);
-                destroyChart(followUpQuestionsChart);
-                // Optionally display a message that trends are not available for "All Time"
-                const chartContainers = document.querySelectorAll('.chart-container');
-                chartContainers.forEach(container => {
-                    if (container.querySelector('canvas')) {
-                         const messageDiv = document.createElement('div');
-                         messageDiv.textContent = 'Trend data not available for "All Time"';
-                         messageDiv.className = 'text-gray-400 text-center';
-                         container.innerHTML = ''; // Clear canvas
-                         container.appendChild(messageDiv);
+            
+            initializeTooltips() {
+                const tooltipIcons = document.querySelectorAll('.tooltip-icon');
+                tooltipIcons.forEach(icon => {
+                    const tooltipText = icon.getAttribute('data-tooltip');
+                    const tooltipBox = icon.querySelector('.tooltip-box');
+                    if (tooltipBox && tooltipText) {
+                        tooltipBox.textContent = tooltipText;
                     }
                 });
             }
         }
 
+        class ClientManager {
+            constructor(api, ui) {
+                this.api = api;
+                this.ui = ui;
+                this.allClients = [];
+                this.currentSortColumn = null;
+                this.currentSortDirection = 'asc';
+                this.clientSearchInput = document.getElementById('client-search'); // Reference input
+                this.industryFilterSelect = document.getElementById('industry-filter'); // Reference select
+                this.clientsTableBody = document.querySelector('#clients-table tbody');
+                this.clientsLoading = document.getElementById('clients-loading');
+                this.clientsEmpty = document.getElementById('clients-empty');
+                this.clientsTable = document.getElementById('clients-table');
+                this.kbClientSelector = document.getElementById('kb-client-selector');
+                this.analyticsClientSelector = document.getElementById('analytics-client-selector');
+            }
 
-        // --- Event Listeners & Initial Load ---
-        createClientForm.addEventListener('submit', createClient);
-        kbClientSelector.addEventListener('change', (event) => loadKnowledgeBase(event.target.value));
-        addKbForm.addEventListener('submit', addKbEntry);
+            async loadClients() {
+                this.clientsLoading.classList.remove('hidden');
+                this.clientsEmpty.classList.add('hidden');
+                this.clientsTable.classList.add('hidden');
 
-        // Analytics Event Listeners
-        analyticsClientSelector.addEventListener('change', updateAnalyticsDashboard);
-        analyticsPeriodSelector.addEventListener('change', updateAnalyticsDashboard);
+                try {
+                    const clients = await this.api.request('/admin/clients');
+                    this.allClients = clients;
+                    // Populate filter dropdown with unique industries
+                    this.populateIndustryFilter();
+                    this.applyFiltersAndSorting(); // Initial render
+                }
+                catch (error) {
+                    this.clientsEmpty.classList.remove('hidden');
+                    this.clientsEmpty.querySelector('h3').textContent = 'Failed to Load Clients';
+                    this.clientsEmpty.querySelector('p').textContent = `Error: ${error.message}`;
+                }
+                finally {
+                    this.clientsLoading.classList.add('hidden');
+                }
+            }
 
-        // Initial load
-        window.addEventListener('load', async () => {
-            await loadClients(); // Load clients for both client management and analytics selectors
-            openTab({currentTarget: document.querySelector('.tab-button.active')}, 'ClientManagement'); // Open default tab
-            // Initial load of analytics will happen when tab is opened for the first time
+            populateIndustryFilter() {
+                const industries = new Set(this.allClients.map(client => client.industry));
+                this.industryFilterSelect.innerHTML = '<option value="">All Industries</option>';
+                industries.forEach(industry => {
+                    const option = document.createElement('option');
+                    option.value = industry;
+                    option.textContent = industry;
+                    this.industryFilterSelect.appendChild(option);
+                });
+            }
+
+            applyFiltersAndSorting() {
+                let clientsToRender = [...this.allClients];
+
+                const searchTerm = this.clientSearchInput.value.toLowerCase();
+                if (searchTerm) {
+                    clientsToRender = clientsToRender.filter(client =>
+                        client.client_id.toLowerCase().includes(searchTerm) ||
+                        client.business_name.toLowerCase().includes(searchTerm) ||
+                        client.industry.toLowerCase().includes(searchTerm)
+                    );
+                }
+
+                const industryFilter = this.industryFilterSelect.value;
+                if (industryFilter) {
+                    clientsToRender = clientsToRender.filter(client => client.industry === industryFilter);
+                }
+
+                if (this.currentSortColumn) {
+                    const sortColumn = this.currentSortColumn;
+                    const sortDirection = this.currentSortDirection;
+                    
+                    clientsToRender.sort((a, b) => {
+                        let valA = a[sortColumn];
+                        let valB = b[sortColumn];
+
+                        if (typeof valA === 'string' && typeof valB === 'string') {
+                            valA = valA.toLowerCase();
+                            valB = valB.toLowerCase();
+                        }
+                        if (sortColumn === 'created_at') {
+                            valA = new Date(valA).getTime();
+                            valB = new Date(valB).getTime();
+                        }
+                        
+                        if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                        if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+                }
+                this.renderClients(clientsToRender);
+            }
+
+            handleSort(headerElement) {
+                const column = headerElement.dataset.sort;
+
+                document.querySelectorAll('#clients-table th.sortable').forEach(th => {
+                    if (th !== headerElement) {
+                        th.classList.remove('asc', 'desc');
+                    }
+                });
+
+                if (this.currentSortColumn === column) {
+                    this.currentSortDirection = this.currentSortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.currentSortColumn = column;
+                    this.currentSortDirection = 'asc';
+                }
+
+                headerElement.classList.remove('asc', 'desc');
+                headerElement.classList.add(this.currentSortDirection);
+
+                this.applyFiltersAndSorting();
+            }
+
+            async createClient(event) {
+                event.preventDefault();
+                const form = event.target;
+                const submitButton = document.getElementById('create-client-btn');
+                const buttonText = submitButton.querySelector('.btn-text');
+                const buttonSpinner = submitButton.querySelector('.btn-spinner');
+
+                buttonText.classList.add('hidden');
+                buttonSpinner.classList.remove('hidden');
+                submitButton.disabled = true;
+
+                const clientData = {
+                    client_id: form.elements['client_id'].value,
+                    business_name: form.elements['business_name'].value,
+                    industry: form.elements['industry'].value
+                };
+                
+                try {
+                    await this.api.request('/admin/clients', {
+                        method: 'POST',
+                        body: JSON.stringify(clientData)
+                    });
+                    
+                    this.ui.showToast(`Client '${clientData.business_name}' created successfully.`, 'success');
+                    form.reset();
+                    await this.loadClients();
+                } catch (error) {
+                    // Error already handled by APIManager.request
+                } finally {
+                    buttonText.classList.remove('hidden');
+                    buttonSpinner.classList.add('hidden');
+                    submitButton.disabled = false;
+                }
+            }
+
+            async deleteClient(clientId) {
+                const confirmDelete = await this.ui.createModal(`Are you sure you want to delete client "${clientId}" and ALL its associated data (KB, history, analytics)? This cannot be undone.`, 'confirm');
+                if (confirmDelete) {
+                    try {
+                        await this.api.request(`/admin/clients/${clientId}`, { method: 'DELETE' });
+                        this.ui.showToast(`Client '${clientId}' and all associated data deleted successfully.`, 'success');
+                        await this.loadClients();
+                    } catch (error) {
+                        // Error already handled by APIManager.request
+                    }
+                }
+            }
+
+            renderClients(clientsToRender) {
+                this.clientsTableBody.innerHTML = '';
+                
+                this.kbClientSelector.innerHTML = '<option value="">-- Select Client --</option>'; 
+                this.analyticsClientSelector.innerHTML = '<option value="all">All Clients</option>'; 
+
+                if (clientsToRender.length === 0) {
+                    this.clientsEmpty.classList.remove('hidden');
+                    this.clientsEmpty.querySelector('h3').textContent = 'No Clients Found';
+                    this.clientsEmpty.querySelector('p').textContent = 'Adjust your search or filters, or create a new client.';
+                    this.clientsTable.classList.add('hidden');
+                    return;
+                }
+
+                this.clientsEmpty.classList.add('hidden');
+                this.clientsTable.classList.remove('hidden');
+
+                clientsToRender.forEach(client => {
+                    const row = this.clientsTableBody.insertRow();
+                    row.innerHTML = `
+                        <td><code>${client.client_id}</code></td>
+                        <td>${client.business_name}</td>
+                        <td><span class="badge">${client.industry}</span></td>
+                        <td>${new Date(client.created_at).toLocaleDateString()}</td>
+                        <td>${client.kb_entries || 0}</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="dashboard.clients.deleteClient('${client.client_id}')">
+                                Delete
+                            </button>
+                        </td>
+                    `;
+                });
+                
+                this.allClients.forEach(client => {
+                    const kbOption = document.createElement('option');
+                    kbOption.value = client.client_id;
+                    kbOption.textContent = client.business_name;
+                    this.kbClientSelector.appendChild(kbOption);
+
+                    const analyticsOption = document.createElement('option');
+                    analyticsOption.value = client.client_id;
+                    analyticsOption.textContent = client.business_name;
+                    this.analyticsClientSelector.appendChild(analyticsOption);
+                });
+            }
+        }
+
+        class KnowledgeBaseManager {
+            constructor(api, ui) {
+                this.api = api;
+                this.ui = ui;
+                this.allKbEntries = [];
+                this.currentClientId = null;
+                this.currentSortColumn = null;
+                this.currentSortDirection = 'asc';
+                this.kbSearchInput = document.getElementById('kb-search'); // Reference input
+                this.knowledgeBaseTableBody = document.querySelector('#knowledge-base-table tbody');
+                this.kbManagementContent = document.getElementById('kb-management-content');
+            }
+
+            async loadKnowledgeBase(clientId) {
+                this.knowledgeBaseTableBody.innerHTML = '';
+                this.currentClientId = clientId;
+
+                if (!clientId) {
+                    this.kbManagementContent.classList.add('hidden');
+                    return;
+                }
+
+                this.kbManagementContent.classList.remove('hidden');
+                document.getElementById('current-kb-client-name').textContent = document.getElementById('kb-client-selector').options[document.getElementById('kb-client-selector').selectedIndex].textContent;
+                document.getElementById('existing-kb-client-name').textContent = document.getElementById('kb-client-selector').options[document.getElementById('kb-client-selector').selectedIndex].textContent;
+
+                try {
+                    const kbEntries = await this.api.request(`/admin/clients/${clientId}/knowledge`);
+                    this.allKbEntries = kbEntries;
+                    this.applyFiltersAndSorting();
+                } catch (error) {
+                    this.knowledgeBaseTableBody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">Failed to load KB entries: ${error.message}</td></tr>`;
+                    this.kbManagementContent.classList.add('hidden');
+                }
+            }
+
+            applyFiltersAndSorting() {
+                let kbEntriesToRender = [...this.allKbEntries];
+
+                const searchTerm = this.kbSearchInput.value.toLowerCase();
+                if (searchTerm) {
+                    kbEntriesToRender = kbEntriesToRender.filter(entry =>
+                        entry.question.toLowerCase().includes(searchTerm) ||
+                        entry.answer.toLowerCase().includes(searchTerm)
+                    );
+                }
+
+                if (this.currentSortColumn) {
+                    const sortColumn = this.currentSortColumn;
+                    const sortDirection = this.currentSortDirection;
+                    
+                    kbEntriesToRender.sort((a, b) => {
+                        let valA = a[sortColumn];
+                        let valB = b[sortColumn];
+
+                        if (typeof valA === 'string' && typeof valB === 'string') {
+                            valA = valA.toLowerCase();
+                            valB = valB.toLowerCase();
+                        }
+                        
+                        if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                        if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+                }
+                this.renderKnowledgeBase(kbEntriesToRender);
+            }
+
+            handleSort(headerElement) {
+                const column = headerElement.dataset.sort;
+
+                document.querySelectorAll('#knowledge-base-table th.sortable').forEach(th => {
+                    if (th !== headerElement) {
+                        th.classList.remove('asc', 'desc');
+                    }
+                });
+
+                if (this.currentSortColumn === column) {
+                    this.currentSortDirection = this.currentSortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.currentSortColumn = column;
+                    this.currentSortDirection = 'asc';
+                }
+
+                headerElement.classList.remove('asc', 'desc');
+                headerElement.classList.add(this.currentSortDirection);
+
+                this.applyFiltersAndSorting();
+            }
+
+            async addKbEntry(event) {
+                event.preventDefault();
+                const form = event.target;
+                const submitButton = document.getElementById('add-kb-btn');
+                const buttonText = submitButton.querySelector('.btn-text');
+                const buttonSpinner = submitButton.querySelector('.btn-spinner');
+
+                if (!this.currentClientId) {
+                    this.ui.showToast('Please select a client first to add a KB entry.', 'warning');
+                    return;
+                }
+                
+                buttonText.classList.add('hidden');
+                buttonSpinner.classList.remove('hidden');
+                submitButton.disabled = true;
+
+                const question = form.elements['kb-question'].value;
+                const answer = form.elements['kb-answer'].value;
+
+                try {
+                    await this.api.request(`/admin/clients/${this.currentClientId}/knowledge`, {
+                        method: 'POST',
+                        body: JSON.stringify({ question, answer })
+                    });
+                    this.ui.showToast('Knowledge base entry added successfully!', 'success');
+                    form.reset();
+                    await this.loadKnowledgeBase(this.currentClientId);
+                } catch (error) {
+                    // Error handled by APIManager.request
+                } finally {
+                    buttonText.classList.remove('hidden');
+                    buttonSpinner.classList.add('hidden');
+                    submitButton.disabled = false;
+                }
+            }
+
+            async editKbEntry(clientId, kbId, currentQuestion, currentAnswer) {
+                const newQuestion = prompt(`Edit Question (KB ID: ${kbId}):`, currentQuestion);
+                if (newQuestion === null) return;
+                const newAnswer = prompt(`Edit Answer (KB ID: ${kbId}):`, currentAnswer);
+                if (newAnswer === null) return;
+
+                if (newQuestion.trim() === '' || newAnswer.trim() === '') {
+                    this.ui.showToast('Question and Answer cannot be empty.', 'error');
+                    return;
+                }
+
+                try {
+                    await this.api.request(`/admin/clients/${clientId}/knowledge/${kbId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ question: newQuestion, answer: newAnswer })
+                    });
+                    this.ui.showToast('Knowledge base entry updated successfully!', 'success');
+                    await this.loadKnowledgeBase(clientId);
+                } catch (error) {
+                    // Error handled by APIManager.request
+                }
+            }
+
+            async deleteKbEntry(clientId, kbId, question) {
+                const confirmDelete = await this.ui.createModal(`Are you sure you want to delete KB entry "${question}" (ID: ${kbId})? This cannot be undone.`, 'confirm');
+                if (confirmDelete) {
+                    try {
+                        await this.api.request(`/admin/clients/${clientId}/knowledge/${kbId}`, { method: 'DELETE' });
+                        this.ui.showToast('Knowledge base entry deleted successfully.', 'success');
+                        await this.loadKnowledgeBase(clientId);
+                    } catch (error) {
+                        // Error already handled by APIManager.request
+                    }
+                }
+            }
+            renderKnowledgeBase(kbEntriesToRender) {
+                this.knowledgeBaseTableBody.innerHTML = '';
+
+                if (kbEntriesToRender.length === 0) {
+                    this.knowledgeBaseTableBody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">No knowledge base entries found. Adjust search/filters or add a new entry above!</td></tr>`;
+                } else {
+                    kbEntriesToRender.forEach(entry => {
+                        const row = this.knowledgeBaseTableBody.insertRow();
+                        row.innerHTML = `
+                            <td>${entry.question}</td>
+                            <td>${entry.answer}</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" onclick="dashboard.kb.editKbEntry('${this.currentClientId}', ${entry.kb_id}, '${entry.question.replace(/'/g, "\\'")}', '${entry.answer.replace(/'/g, "\\'")}')">Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="dashboard.kb.deleteKbEntry('${this.currentClientId}', ${entry.kb_id}, '${entry.question.replace(/'/g, "\\'")}')">Delete</button>
+                            </td>
+                        `;
+                    });
+                }
+            }
+        }
+
+        class AnalyticsManager {
+            constructor(api, ui) {
+                this.api = api;
+                this.ui = ui;
+                this.conversationVolumeChart = null;
+                this.ragHitRateChart = null;
+                this.responseTimeChart = null;
+                this.followUpQuestionsChart = null;
+
+                // References to metric card elements for easy updating
+                this.totalQueriesEl = {
+                    number: document.getElementById('total-queries'),
+                    trend: document.getElementById('total-queries-trend'),
+                    footer: document.getElementById('total-queries-footer'),
+                    dot: document.getElementById('total-queries-dot')
+                };
+                this.ragHitRateEl = {
+                    number: document.getElementById('rag-hit-rate'),
+                    trend: document.getElementById('rag-hit-rate-trend'),
+                    footer: document.getElementById('rag-hit-rate-footer'),
+                    dot: document.getElementById('rag-hit-rate-dot')
+                };
+                this.avgResponseTimeEl = {
+                    number: document.getElementById('avg-response-time'),
+                    trend: document.getElementById('avg-response-time-trend'),
+                    footer: document.getElementById('avg-response-time-footer'),
+                    dot: document.getElementById('avg-response-time-dot')
+                };
+                this.inappropriateTriggersEl = {
+                    number: document.getElementById('inappropriate-triggers'),
+                    trend: document.getElementById('inappropriate-triggers-trend'),
+                    footer: document.getElementById('inappropriate-triggers-footer'),
+                    dot: document.getElementById('inappropriate-triggers-dot')
+                };
+                this.insightsContent = document.getElementById('insights-content');
+            }
+
+            async updateAnalyticsDashboard() {
+                const selectedClientId = document.getElementById('analytics-client-selector').value;
+                const selectedPeriod = document.getElementById('analytics-period-selector').value;
+
+                this.ui.showLoadingOverlay();
+
+                try {
+                    const summaryEndpoint = `/admin/analytics/summary?client_id=${selectedClientId !== 'all' ? selectedClientId : ''}&period=${selectedPeriod}`;
+                    const summary = await this.api.request(summaryEndpoint);
+
+                    // Update metric numbers
+                    this.totalQueriesEl.number.textContent = summary.total_queries;
+                    this.ragHitRateEl.number.innerHTML = `${summary.rag_hit_rate}<span>%</span>`;
+                    this.avgResponseTimeEl.number.innerHTML = `${summary.avg_response_time}<span>s</span>`;
+                    this.inappropriateTriggersEl.number.textContent = summary.inappropriate_triggers;
+
+                    // Generate and render insights
+                    const insights = this.generateInsights(summary);
+                    this.renderInsights(insights);
+
+                    // Placeholder for trend and footer logic (Iteration 2.1 mock data will be replaced here)
+                    // For now, we'll keep simple dot/footer logic for response time, rest remain as hardcoded visuals.
+                    // This data needs to come from a trends API that compares periods.
+                    const avgResponseTimeDot = this.avgResponseTimeEl.dot;
+                    const avgResponseTimeFooter = this.avgResponseTimeEl.footer;
+                    const avgResponseTimeTrend = this.avgResponseTimeEl.trend;
+
+                    avgResponseTimeTrend.textContent = ''; // Clear mock trend
+                    avgResponseTimeTrend.classList.remove('positive', 'negative', 'neutral');
+
+
+                    if (summary.avg_response_time > 0.8) { // Example threshold for warning
+                        avgResponseTimeDot.className = 'status-dot status-warning';
+                        avgResponseTimeFooter.className = 'metric-footer warning';
+                        avgResponseTimeFooter.textContent = 'Performance warning';
+                        avgResponseTimeTrend.textContent = '▲'; // Placeholder for actual trend
+                        avgResponseTimeTrend.classList.add('negative'); // Assuming warning is bad
+                    } else if (summary.avg_response_time > 0) { // Good performance
+                        avgResponseTimeDot.className = 'status-dot status-good';
+                        avgResponseTimeFooter.className = 'metric-footer good';
+                        avgResponseTimeFooter.textContent = 'Good performance';
+                        avgResponseTimeTrend.textContent = '▼'; // Placeholder for actual trend
+                        avgResponseTimeTrend.classList.add('positive'); // Assuming good is positive
+                    } else { // 0 or no data
+                        avgResponseTimeDot.className = 'status-dot status-error';
+                        avgResponseTimeFooter.className = 'metric-footer error';
+                        avgResponseTimeFooter.textContent = 'No data';
+                        avgResponseTimeTrend.textContent = '⚠️';
+                        avgResponseTimeTrend.classList.add('neutral');
+                    }
+                    // Apply similar basic dot/footer logic to other metrics if desired or wait for proper trend data.
+                    
+                    // RAG Hit Rate dot based on actual value
+                    if (summary.rag_hit_rate < 30) {
+                        this.ragHitRateEl.dot.className = 'status-dot status-danger';
+                        this.ragHitRateEl.footer.className = 'metric-footer error';
+                        this.ragHitRateEl.footer.textContent = 'Critically low!';
+                        this.ragHitRateEl.trend.className = 'metric-trend negative';
+                        this.ragHitRateEl.trend.textContent = '↓';
+                    } else if (summary.rag_hit_rate < 50) {
+                        this.ragHitRateEl.dot.className = 'status-dot status-warning';
+                        this.ragHitRateEl.footer.className = 'metric-footer warning';
+                        this.ragHitRateEl.footer.textContent = 'Below target (50%)';
+                        this.ragHitRateEl.trend.className = 'metric-trend negative';
+                        this.ragHitRateEl.trend.textContent = '↓';
+                    } else {
+                        this.ragHitRateEl.dot.className = 'status-dot status-good';
+                        this.ragHitRateEl.footer.className = 'metric-footer good';
+                        this.ragHitRateEl.footer.textContent = 'Meeting target';
+                        this.ragHitRateEl.trend.className = 'metric-trend positive';
+                        this.ragHitRateEl.trend.textContent = '↑';
+                    }
+
+                    // Total Queries dot/footer (simple for now)
+                    if (summary.total_queries === 0) {
+                        this.totalQueriesEl.dot.className = 'status-dot status-warning';
+                        this.totalQueriesEl.footer.className = 'metric-footer warning';
+                        this.totalQueriesEl.footer.textContent = 'No queries yet';
+                        this.totalQueriesEl.trend.className = 'metric-trend neutral';
+                        this.totalQueriesEl.trend.textContent = '-';
+                    } else {
+                        this.totalQueriesEl.dot.className = 'status-dot status-good';
+                        this.totalQueriesEl.footer.className = 'metric-footer good';
+                        this.totalQueriesEl.footer.textContent = 'Receiving queries';
+                        this.totalQueriesEl.trend.className = 'metric-trend positive';
+                        this.totalQueriesEl.trend.textContent = '↑';
+                    }
+
+                    // Inappropriate Triggers dot/footer
+                    if (summary.inappropriate_triggers > 0) {
+                        this.inappropriateTriggersEl.dot.className = 'status-dot status-danger';
+                        this.inappropriateTriggersEl.footer.className = 'metric-footer error';
+                        this.inappropriateTriggersEl.footer.textContent = `Blocked ${summary.inappropriate_triggers} triggers`;
+                        this.inappropriateTriggersEl.trend.className = 'metric-trend negative';
+                        this.inappropriateTriggersEl.trend.textContent = '⚠️';
+                    } else {
+                        this.inappropriateTriggersEl.dot.className = 'status-dot status-good';
+                        this.inappropriateTriggersEl.footer.className = 'metric-footer good';
+                        this.inappropriateTriggersEl.footer.textContent = 'Content filter working';
+                        this.inappropriateTriggersEl.trend.className = 'metric-trend positive';
+                        this.inappropriateTriggersEl.trend.textContent = '✓';
+                    }
+
+
+                    if (selectedPeriod !== 'all') {
+                        const trendEndpoint = `/admin/analytics/daily_trend?client_id=${selectedClientId !== 'all' ? selectedClientId : ''}&period=${selectedPeriod}`;
+                        const trendData = await this.api.request(trendEndpoint);
+
+                        const dates = trendData.map(d => d.date);
+                        const totalQueriesData = trendData.map(d => d.total_queries);
+                        const ragHitsData = trendData.map(d => d.rag_hits);
+                        const avgResponseTimeData = trendData.map(d => d.avg_response_time);
+
+                        this.renderCharts(dates, totalQueriesData, ragHitsData, avgResponseTimeData);
+                    } else {
+                        this.destroyAllCharts();
+                        this.displayNoTrendDataMessage();
+                    }
+                } catch (error) {
+                    console.error("Failed to load analytics data:", error);
+                    this.clearMetricsDisplay();
+                    this.destroyAllCharts();
+                    this.displayNoDataMessage();
+                } finally {
+                    this.ui.hideLoadingOverlay();
+                }
+            }
+
+            // NEW: Method to generate insights
+            generateInsights(summary) {
+                const insights = [];
+
+                // Insight 1: RAG Hit Rate
+                if (summary.rag_hit_rate < 30 && summary.total_queries > 0) {
+                    insights.push({ type: 'danger', message: `Critical RAG Hit Rate (${summary.rag_hit_rate}%): Your knowledge base is critically underperforming. Add more comprehensive FAQs.` });
+                } else if (summary.rag_hit_rate < 50 && summary.total_queries > 0) {
+                    insights.push({ type: 'warning', message: `Low RAG Hit Rate (${summary.rag_hit_rate}%): Your knowledge base is below target (50%). Consider adding more FAQ content for common questions.` });
+                } else if (summary.rag_hit_rate >= 50 && summary.total_queries > 0) {
+                    insights.push({ type: 'good', message: `Excellent RAG Hit Rate (${summary.rag_hit_rate}%): Your knowledge base is effectively answering customer queries.` });
+                }
+
+                // Insight 2: Avg. Response Time
+                if (summary.avg_response_time > 1.5 && summary.total_queries > 0) { // Example threshold
+                    insights.push({ type: 'danger', message: `High Response Time (${summary.avg_response_time}s): Luna is responding slowly. Monitor server performance and model load.` });
+                } else if (summary.avg_response_time > 0.8 && summary.total_queries > 0) {
+                    insights.push({ type: 'warning', message: `Moderate Response Time (${summary.avg_response_time}s): Luna's response time is acceptable but could be faster. Optimize model usage.` });
+                } else if (summary.avg_response_time > 0 && summary.total_queries > 0) {
+                     insights.push({ type: 'good', message: `Optimal Response Time (${summary.avg_response_time}s): Luna is responding quickly and efficiently.` });
+                } else if (summary.total_queries > 0 && summary.avg_response_time === 0) {
+                    insights.push({ type: 'error', message: `Response Time Data Missing: Queries processed, but response time is 0. Check analytics logging pipeline.` });
+                }
+
+
+                // Insight 3: Inappropriate Triggers
+                if (summary.inappropriate_triggers > 0) {
+                    insights.push({ type: 'danger', message: `Inappropriate Content Detected (${summary.inappropriate_triggers} triggers): Luna blocked potentially inappropriate content. Review recent chat logs for malicious user behavior.` });
+                } else if (summary.total_queries > 0) {
+                    insights.push({ type: 'good', message: `No Inappropriate Triggers: Content filter is working effectively, all responses were appropriate.` });
+                }
+                
+                // Insight 4: Total Queries (basic check)
+                if (summary.total_queries === 0) {
+                    insights.push({ type: 'warning', message: `No Queries Received: Luna has processed 0 queries in the selected period. Ensure the chat widget is active and users are interacting.` });
+                }
+
+                return insights;
+            }
+
+            // NEW: Method to render insights
+            renderInsights(insights) {
+                this.insightsContent.innerHTML = ''; // Clear previous insights
+
+                if (insights.length === 0) {
+                    this.insightsContent.innerHTML = `<div class="insight-loading">No specific insights generated for the selected data.</div>`;
+                    return;
+                }
+
+                insights.forEach(insight => {
+                    const insightCard = document.createElement('div');
+                    insightCard.className = `insight-card ${insight.type}`; // Add type for styling (good, warning, danger)
+                    insightCard.innerHTML = `
+                        <div class="flex items-center mb-2">
+                            <span class="text-${insight.type === 'good' ? 'green-500' : insight.type === 'warning' ? 'orange-500' : 'red-500'} mr-2">
+                                ${insight.type === 'good' ? '✅' : insight.type === 'warning' ? '⚠️' : '🚨'}
+                            </span>
+                            <span class="font-medium text-gray-800">${insight.message.split(':')[0]}</span>
+                        </div>
+                        <p class="text-sm text-gray-600">${insight.message.split(':')[1] || insight.message}</p>
+                    `;
+                    this.insightsContent.appendChild(insightCard);
+                });
+            }
+
+            renderCharts(dates, totalQueriesData, ragHitsData, avgResponseTimeData) {
+                this._destroyChart(this.conversationVolumeChart);
+                const ctxVolume = document.getElementById('conversationVolumeChart').getContext('2d');
+                this.conversationVolumeChart = new Chart(ctxVolume, {
+                    type: 'bar',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Daily Queries',
+                            data: totalQueriesData,
+                            backgroundColor: 'rgba(0, 123, 255, 0.7)',
+                            borderColor: 'rgba(0, 123, 255, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { title: { display: true, text: 'Daily Conversation Volume', color: '#e0e0e0' } },
+                        scales: {
+                            x: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' } },
+                            y: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' }, beginAtZero: true }
+                        }
+                    }
+                });
+
+                const ragHitRates = totalQueriesData.map((total, index) =>
+                    total > 0 ? (ragHitsData[index] / total) * 100 : 0
+                );
+                this._destroyChart(this.ragHitRateChart);
+                const ctxHitRate = document.getElementById('ragHitRateChart').getContext('2d');
+                this.ragHitRateChart = new Chart(ctxHitRate, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Daily RAG Hit Rate (%)',
+                            data: ragHitRates,
+                            borderColor: 'rgba(40, 167, 69, 1)',
+                            backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { title: { display: true, text: 'Daily RAG Hit Rate Trend', color: '#e0e0e0' } },
+                        scales: {
+                            x: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' } },
+                            y: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' }, beginAtZero: true, max: 100 }
+                        }
+                    }
+                });
+
+                this._destroyChart(this.responseTimeChart);
+                const ctxResponseTime = document.getElementById('responseTimeChart').getContext('2d');
+                this.responseTimeChart = new Chart(ctxResponseTime, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Avg. Response Time (s)',
+                            data: avgResponseTimeData,
+                            borderColor: 'rgba(255, 193, 7, 1)',
+                            backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { title: { display: true, text: 'Daily Avg. Response Time Trend', color: '#e0e0e0' } },
+                        scales: {
+                            x: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' } },
+                            y: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' }, beginAtZero: true }
+                        }
+                    }
+                });
+
+                this._destroyChart(this.followUpQuestionsChart);
+                const ctxFollowUp = document.getElementById('followUpQuestionsChart').getContext('2d');
+                this.followUpQuestionsChart = new Chart(ctxFollowUp, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Avg. Follow-Up Questions (Future)',
+                            data: Array(dates.length).fill(0),
+                            borderColor: 'rgba(23, 162, 184, 1)',
+                            backgroundColor: 'rgba(23, 162, 184, 0.2)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { title: { display: true, text: 'Daily Avg. Follow-Up Questions (Future)', color: '#e0e0e0' } },
+                        scales: {
+                            x: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' } },
+                            y: { ticks: { color: '#a0a0a0' }, grid: { color: '#4a4a4a' }, beginAtZero: true }
+                        }
+                    }
+                });
+            }
+
+            _destroyChart(chartInstance) {
+                if (chartInstance) {
+                    chartInstance.destroy();
+                }
+            }
+
+            destroyAllCharts() {
+                this._destroyChart(this.conversationVolumeChart);
+                this._destroyChart(this.ragHitRateChart);
+                this._destroyChart(this.responseTimeChart);
+                this._destroyChart(this.followUpQuestionsChart);
+            }
+
+            displayNoTrendDataMessage() {
+                const chartContainers = document.querySelectorAll('.charts-grid .chart-container');
+                chartContainers.forEach(container => {
+                    const canvas = container.querySelector('canvas');
+                    if (canvas) {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.textContent = 'Trend data not available for "All Time"';
+                        messageDiv.className = 'text-gray-400 text-center text-sm absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full';
+                        canvas.style.display = 'none';
+                        container.style.position = 'relative';
+                        container.appendChild(messageDiv);
+                    }
+                });
+            }
+
+            displayNoDataMessage() {
+                // Clear metric displays
+                document.getElementById('total-queries').textContent = '-';
+                document.getElementById('rag-hit-rate').innerHTML = `-<span>%</span>`;
+                document.getElementById('avg-response-time').innerHTML = `-<span>s</span>`;
+                document.getElementById('inappropriate-triggers').textContent = '-';
+
+                // Display message in insights panel
+                this.insightsContent.innerHTML = `<div class="insight-loading">No analytics data available for the selected period.</div>`;
+            }
+
+            clearMetricsDisplay() {
+                document.getElementById('total-queries').textContent = '-';
+                document.getElementById('rag-hit-rate').innerHTML = `-<span>%</span>`;
+                document.getElementById('avg-response-time').innerHTML = `-<span>s</span>`;
+                document.getElementById('inappropriate-triggers').textContent = '-';
+            }
+        }
+
+        // Initialize Dashboard
+        let dashboard;
+        document.addEventListener('DOMContentLoaded', () => {
+            dashboard = new Dashboard();
         });
-
     </script>
 </body>
 </html>

@@ -7,9 +7,25 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Shared Design System Variables (from Admin Dashboard) */
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2a2a2a;
+            --bg-tertiary: #3a3a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --accent-primary: #007bff; /* Blue */
+            --accent-success: #28a745; /* Green */
+            --accent-warning: #ffc107; /* Orange/Yellow */
+            --accent-danger: #dc3545; /* Red */
+            --border-color: #4a4a4a;
+            --transition: all 0.2s ease;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #1a1a1a; /* Dark background */
+            background-color: var(--bg-primary);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -19,99 +35,219 @@
             box-sizing: border-box;
         }
         .chat-container {
-            background-color: #2a2a2a; /* Slightly lighter dark for container */
-            border-radius: 1rem; /* Rounded corners */
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); /* Darker shadow */
+            background-color: var(--bg-secondary);
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             width: 100%;
             max-width: 600px;
             height: 80vh; /* Responsive height */
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Ensures rounded corners are respected */
+            overflow: hidden;
         }
         .chat-header {
-            background-color: #3a3a3a; /* Darker header */
-            color: #ffffff;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
             padding: 1rem 1.5rem;
             border-top-left-radius: 1rem;
             border-top-right-radius: 1rem;
             display: flex;
-            flex-direction: column; /* Allow stacking for client selector */
+            flex-direction: column;
             gap: 0.5rem;
             align-items: flex-start;
-            border-bottom: 1px solid #4a4a4a;
+            border-bottom: 1px solid var(--border-color);
+            position: relative; /* For status indicator positioning */
         }
+        .chat-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0;
+        }
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            width: 100%;
+            justify-content: space-between; /* Spread elements */
+        }
+        .client-selector-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .client-selector-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+        .client-selector {
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            background-color: var(--border-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            outline: none;
+            cursor: pointer;
+        }
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-secondary); /* Darker background for contrast */
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .status-unknown { background: var(--text-muted); }
+        .status-good { background: var(--accent-success); }
+        .status-error { background: var(--accent-danger); }
+
         .chat-messages {
             flex-grow: 1;
-            padding: 1.5rem;
+            padding: 1rem 1.5rem; /* Reduced vertical padding slightly for more messages */
             overflow-y: auto;
-            background-color: #2a2a2a; /* Same as container */
+            background-color: var(--bg-secondary);
             display: flex;
             flex-direction: column;
-            gap: 1rem; /* Space between messages */
+            gap: 0.75rem; /* Space between messages */
         }
-        .message {
-            max-width: 80%;
-            padding: 0.75rem 1rem;
-            border-radius: 0.75rem;
+        /* Message Bubbles */
+        .message-bubble {
+            max-width: 85%; /* Slightly wider max-width */
+            padding: 0.8rem 1.2rem; /* Adjusted padding */
+            border-radius: 1.2rem; /* More rounded */
             line-height: 1.4;
-            word-wrap: break-word; /* Ensure long words break */
+            word-wrap: break-word;
+            position: relative; /* For the "tail" */
+            font-size: 0.95rem; /* Slightly larger text */
+            animation: slideIn 0.3s ease-out; /* Smooth entrance */
         }
-        .message.user {
-            background-color: #007bff; /* Blue for user */
+
+        .message-bubble.user {
+            background: linear-gradient(135deg, var(--accent-primary), #0056b3); /* Gradient blue */
             color: white;
             align-self: flex-end;
-            border-bottom-right-radius: 0.25rem; /* Pointy corner */
+            border-bottom-right-radius: 0.4rem; /* Pointy corner */
+            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
         }
-        .message.bot {
-            background-color: #4a4a4a; /* Grey for bot */
-            color: #e0e0e0;
+        .message-bubble.bot {
+            background-color: var(--bg-tertiary); /* Dark grey for bot */
+            color: var(--text-secondary);
             align-self: flex-start;
-            border-bottom-left-radius: 0.25rem; /* Pointy corner */
+            border-bottom-left-radius: 0.4rem; /* Pointy corner */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
+
+        /* Message bubble tails (optional, can be complex with pure CSS) */
+        /* For a simpler, more robust tail, sometimes a div inside is easier */
+        /* Or, you can omit the tail for a cleaner modern look */
+        /* .message-bubble.user::after {
+            content: '';
+            position: absolute;
+            bottom: 0px;
+            right: -8px;
+            width: 15px;
+            height: 15px;
+            background-color: #007bff;
+            border-bottom-left-radius: 50%;
+            clip-path: polygon(0 0, 100% 0, 100% 100%);
+            transform: rotate(45deg);
+        } */
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+            padding: 0.75rem 1.2rem;
+            border-radius: 1.2rem;
+            align-self: flex-start;
+            gap: 0.3rem;
+            font-size: 0.9rem;
+            margin-top: 0.75rem; /* Match message gap */
+        }
+        .typing-indicator .dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--text-muted);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-indicator .dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator .dot:nth-child(2) { animation-delay: -0.16s; }
+        .typing-indicator .dot:nth-child(3) { animation-delay: 0s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Message Animations */
+        @keyframes slideIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+
         .chat-input-area {
-            background-color: #3a3a3a; /* Darker input area */
+            background-color: var(--bg-tertiary);
             padding: 1rem 1.5rem;
             border-bottom-left-radius: 1rem;
             border-bottom-right-radius: 1rem;
             display: flex;
             gap: 0.75rem;
             align-items: center;
-            border-top: 1px solid #4a4a4a;
+            border-top: 1px solid var(--border-color);
         }
         .chat-input {
             flex-grow: 1;
-            background-color: #4a4a4a;
-            border: 1px solid #555;
-            color: #e0e0e0;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
             border-radius: 0.5rem;
             padding: 0.75rem 1rem;
             outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .chat-input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
         }
         .chat-button {
-            background-color: #007bff;
+            background-color: var(--accent-primary);
             color: white;
             padding: 0.75rem 1.25rem;
             border-radius: 0.5rem;
             border: none;
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: background-color 0.2s ease, transform 0.1s ease;
             font-weight: 600;
         }
         .chat-button:hover {
             background-color: #0056b3;
         }
+        .chat-button:active {
+            transform: scale(0.98);
+        }
         .reset-button {
-            background-color: #dc3545;
+            background-color: var(--accent-danger);
         }
         .reset-button:hover {
             background-color: #c82333;
-        }
-        .loading-indicator {
-            text-align: center;
-            padding: 1rem;
-            color: #a0a0a0;
-            font-style: italic;
         }
         .modal-overlay {
             position: fixed;
@@ -126,13 +262,13 @@
             z-index: 1000;
         }
         .modal-content {
-            background: #2a2a2a;
+            background: var(--bg-secondary);
             padding: 2rem;
             border-radius: 1rem;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.7);
             max-width: 400px;
             text-align: center;
-            color: #e0e0e0;
+            color: var(--text-secondary);
         }
         .modal-buttons {
             margin-top: 1.5rem;
@@ -145,26 +281,67 @@
             border-radius: 0.5rem;
             cursor: pointer;
         }
+        /* Toast Notifications (copied from Admin Dashboard) */
+        .toast-container {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .toast {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            min-width: 300px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transform: translateX(120%); /* Start off-screen */
+            opacity: 0;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .toast-success { border-left: 4px solid var(--accent-success); }
+        .toast-error { border-left: 4px solid var(--accent-danger); }
+        .toast-warning { border-left: 4px solid var(--accent-warning); }
+
     </style>
 </head>
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <h2 class="text-xl font-semibold">Luna Customer Support</h2>
-            <div class="flex items-center gap-2 mt-2">
-                <label for="client-selector" class="text-sm font-medium">Select Business:</label>
-                <select id="client-selector" class="px-3 py-2 rounded-md bg-gray-700 border-gray-600 text-white text-sm">
-                    </select>
+            <div class="header-controls">
+                <h2 class="text-xl font-semibold">Luna Customer Support</h2>
+                <div class="client-selector-group">
+                    <label for="client-selector">Business:</label>
+                    <select id="client-selector" class="client-selector"></select>
+                </div>
+            </div>
+            <div class="status-indicator" id="api-status">
+                <span class="status-dot status-unknown"></span>
+                <span class="status-text">Checking API...</span>
             </div>
         </div>
+
         <div class="chat-messages" id="chat-messages">
             </div>
+
         <div class="chat-input-area">
             <input type="text" id="user-input" class="chat-input" placeholder="Type your message...">
             <button id="send-button" class="chat-button">Send</button>
             <button id="reset-button" class="chat-button reset-button">Reset Chat</button>
         </div>
     </div>
+
+    <div id="toast-container" class="toast-container"></div>
+    <div id="modal-overlay" class="modal-overlay hidden"></div>
 
     <script>
         // Dynamic API_BASE_URL based on hostname
@@ -180,202 +357,369 @@
             // API_BASE_URL = 'http://50.18.38.83:8000'; // Uncomment and use this line for a fixed EC2 IP
         }
 
+        // --- Modular JavaScript Architecture for Chat Widget ---
 
-        // --- Global Variables ---
-        let currentUserId = 'guest_user_' + Math.random().toString(36).substring(2, 15); // Unique ID for guest user
-        let currentClientId = ''; // Will be set by selector
+        class ChatWidget {
+            constructor() {
+                this.ui = new ChatUIManager();
+                this.api = new ChatAPIManager(this.ui);
+                this.state = new ChatStateManager();
+                this.messages = new MessageManager(this.api); // FIXED: Pass this.api to MessageManager
 
-        // --- DOM Elements ---
-        const chatMessages = document.getElementById('chat-messages');
-        const userInput = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-button');
-        const resetButton = document.getElementById('reset-button');
-        const clientSelector = document.getElementById('client-selector');
+                this.setupEventListeners();
+                this.init();
+            }
 
-        // --- Utility Functions ---
-
-        // Custom alert/confirm modals instead of browser defaults
-        function createModal(message, type = 'alert') {
-            const modalOverlay = document.createElement('div');
-            modalOverlay.className = 'modal-overlay';
-            modalOverlay.innerHTML = `
-                <div class="modal-content">
-                    <p>${message}</p>
-                    <div class="modal-buttons">
-                        <button id="modal-ok" class="chat-button">OK</button>
-                        ${type === 'confirm' ? '<button id="modal-cancel" class="chat-button reset-button">Cancel</button>' : ''}
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modalOverlay);
-
-            return new Promise(resolve => {
-                document.getElementById('modal-ok').onclick = () => {
-                    modalOverlay.remove();
-                    resolve(true);
-                };
-                if (type === 'confirm') {
-                    document.getElementById('modal-cancel').onclick = () => {
-                        modalOverlay.remove();
-                        resolve(false);
-                    };
+            async init() {
+                await this.api.checkConnection(); // Check API status first
+                await this.api.loadClientsIntoSelector(this.ui.clientSelector, this.state); // Load clients and set initial client_id
+                
+                // FIXED: Always display a welcome message first
+                this.messages.clearMessages(this.ui); // Clear any initial loading messages
+                // Pass currentClientName to addMessage for the welcome message
+                this.messages.addMessage('bot', `Hello! I'm Luna, your AI customer support. How can I help you today regarding ${this.state.currentClientName}?`, this.ui);
+                
+                // Then load history (which will be appended after welcome)
+                if (this.state.currentClientId) {
+                    await this.messages.loadHistory(this.state.currentUserId, this.state.currentClientId, this.ui);
+                } else {
+                    this.ui.showToast('Please select a business to start chat.', 'warning');
                 }
-            });
+                this.ui.scrollToBottom(); // Ensure scrolled to bottom after loading
+            }
+
+            setupEventListeners() {
+                this.ui.sendButton.addEventListener('click', () => this.sendMessage());
+                this.ui.userInput.addEventListener('keypress', (event) => {
+                    if (event.key === 'Enter') {
+                        this.sendMessage();
+                    }
+                });
+                this.ui.resetButton.addEventListener('click', () => this.resetChat());
+                this.ui.clientSelector.addEventListener('change', (event) => this.switchClient(event.target.value));
+            }
+
+            async sendMessage() {
+                const message = this.ui.userInput.value.trim();
+                if (message === '') return;
+                if (!this.state.currentClientId) {
+                    this.ui.showToast('Please select a business first!', 'warning');
+                    return;
+                }
+
+                this.messages.addMessage('user', message, this.ui); // Display user message instantly
+                this.ui.userInput.value = ''; // Clear input
+                this.ui.showTypingIndicator(); // Show "Luna is typing..."
+
+                try {
+                    const responseData = await this.api.sendMessage(this.state.currentUserId, this.state.currentClientId, message);
+                    this.messages.addMessage('bot', responseData.response, this.ui);
+                } catch (error) {
+                    this.messages.addMessage('bot', "I'm sorry, I'm having trouble connecting right now. Please try again later.", this.ui);
+                } finally {
+                    this.ui.hideTypingIndicator();
+                    this.ui.scrollToBottom();
+                }
+            }
+
+            async resetChat() {
+                if (!this.state.currentClientId) {
+                    this.ui.showToast('Please select a business first to reset chat.', 'warning');
+                    return;
+                }
+                const confirmReset = await this.ui.createModal('Are you sure you want to reset the chat history for this client?', 'confirm');
+                if (confirmReset) {
+                    try {
+                        const data = await this.api.resetChat(this.state.currentUserId, this.state.currentClientId);
+                        this.ui.showToast(data.message, 'success');
+                        this.messages.clearMessages(this.ui);
+                        // Add initial welcome message after reset
+                        this.messages.addMessage('bot', `Hello! I'm Luna, your AI customer support. How can I help you today regarding ${this.state.currentClientName}?`, this.ui);
+                    } catch (error) {
+                        this.ui.showToast("Failed to reset chat history.", 'error');
+                    }
+                }
+            }
+
+            async switchClient(newClientId) {
+                if (newClientId === this.state.currentClientId) return; // No change
+                
+                const selectedOption = this.ui.clientSelector.options[this.ui.clientSelector.selectedIndex];
+                this.state.currentClientId = newClientId;
+                this.state.currentClientName = selectedOption ? selectedOption.textContent : '';
+
+                this.ui.showToast(`Switched to business: ${this.state.currentClientName}`, 'info');
+                // FIXED: Clear messages and then add the welcome message followed by history
+                this.messages.clearMessages(this.ui); 
+                this.messages.addMessage('bot', `Hello! I'm Luna, your AI customer support. How can I help you today regarding ${this.state.currentClientName}?`, this.ui);
+                
+                await this.messages.loadHistory(this.state.currentUserId, this.state.currentClientId, this.ui); // FIXED: No longer passing currentClientName here directly
+                this.ui.scrollToBottom();
+            }
         }
 
-        function showCustomAlert(message) {
-            return createModal(message, 'alert');
+        class ChatUIManager {
+            constructor() {
+                this.chatMessagesContainer = document.getElementById('chat-messages');
+                this.userInput = document.getElementById('user-input');
+                this.sendButton = document.getElementById('send-button');
+                this.resetButton = document.getElementById('reset-button');
+                this.clientSelector = document.getElementById('client-selector');
+                this.apiStatusElement = document.getElementById('api-status');
+                this.toastContainer = document.getElementById('toast-container');
+                this.modalOverlay = document.getElementById('modal-overlay');
+
+                this.typingIndicatorElement = this._createTypingIndicatorElement();
+            }
+
+            _createTypingIndicatorElement() {
+                const indicator = document.createElement('div');
+                indicator.className = 'typing-indicator';
+                indicator.innerHTML = `
+                    <span>Luna is typing</span>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                `;
+                return indicator;
+            }
+
+            _ensureTypingIndicatorIsLast() {
+                if (this.typingIndicatorElement.parentNode !== this.chatMessagesContainer || 
+                    this.chatMessagesContainer.lastChild !== this.typingIndicatorElement) {
+                    this.chatMessagesContainer.appendChild(this.typingIndicatorElement);
+                }
+            }
+
+            displayMessage(sender, message) {
+                if (!this.typingIndicatorElement.classList.contains('hidden')) {
+                     this.typingIndicatorElement.classList.add('hidden');
+                }
+
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message-bubble', sender);
+                messageElement.textContent = message;
+                this.chatMessagesContainer.appendChild(messageElement);
+                this.scrollToBottom();
+            }
+
+            clearMessages() {
+                this.chatMessagesContainer.innerHTML = '';
+                this._ensureTypingIndicatorIsLast(); 
+            }
+
+            scrollToBottom() {
+                this.chatMessagesContainer.scrollTop = this.chatMessagesContainer.scrollHeight;
+            }
+
+            showTypingIndicator() {
+                this._ensureTypingIndicatorIsLast();
+                this.typingIndicatorElement.classList.remove('hidden');
+                this.scrollToBottom();
+            }
+
+            hideTypingIndicator() {
+                this.typingIndicatorElement.classList.add('hidden');
+            }
+
+            showToast(message, type = 'success') {
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+                toast.innerHTML = `<p>${message}</p>`;
+                
+                this.toastContainer.appendChild(toast);
+                
+                setTimeout(() => toast.classList.add('show'), 10);
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    toast.addEventListener('transitionend', () => toast.remove());
+                }, 5000);
+            }
+
+            async createModal(message, type = 'alert') {
+                this.modalOverlay.classList.remove('hidden');
+                this.modalOverlay.innerHTML = `
+                    <div class="modal-content">
+                        <p>${message}</p>
+                        <div class="modal-buttons">
+                            <button id="modal-ok" class="chat-button">OK</button>
+                            ${type === 'confirm' ? '<button id="modal-cancel" class="chat-button reset-button">Cancel</button>' : ''}
+                        </div>
+                    </div>
+                `;
+
+                return new Promise(resolve => {
+                    document.getElementById('modal-ok').onclick = () => {
+                        this.modalOverlay.classList.add('hidden');
+                        resolve(true);
+                    };
+                    if (type === 'confirm') {
+                        document.getElementById('modal-cancel').onclick = () => {
+                            this.modalOverlay.classList.add('hidden');
+                            resolve(false);
+                        };
+                    }
+                });
+            }
+
+            updateApiStatus(connected) {
+                const dot = this.apiStatusElement.querySelector('.status-dot');
+                const text = this.apiStatusElement.querySelector('.status-text');
+                
+                if (connected) {
+                    dot.className = 'status-dot status-good';
+                    text.textContent = 'API Connected';
+                } else {
+                    dot.className = 'status-dot status-error';
+                    text.textContent = 'API Disconnected';
+                }
+            }
         }
 
-        function showCustomConfirm(message) {
-            return createModal(message, 'confirm');
-        }
+        class ChatAPIManager {
+            constructor(ui) {
+                this.baseURL = API_BASE_URL; // Uses global API_BASE_URL set earlier
+                this.ui = ui;
+                this.isConnected = false;
+            }
 
+            async checkConnection() {
+                try {
+                    const response = await fetch(`${this.baseURL}/`);
+                    this.isConnected = response.ok;
+                    this.ui.updateApiStatus(this.isConnected);
+                    if (!this.isConnected) {
+                        this.ui.showToast('API Disconnected. Please ensure the backend server is running.', 'error');
+                    }
+                } catch (error) {
+                    this.isConnected = false;
+                    this.ui.updateApiStatus(false);
+                    this.ui.showToast('Could not connect to the API. Check network and server status.', 'error');
+                }
+            }
 
-        function displayMessage(sender, message) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', sender);
-            messageElement.textContent = message;
-            chatMessages.appendChild(messageElement);
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to bottom
-        }
+            async loadClientsIntoSelector(selectorElement, chatState) {
+                try {
+                    const clients = await this.fetchData(`${this.baseURL}/admin/clients`);
+                    selectorElement.innerHTML = '<option value="">-- Select Business --</option>';
+                    if (clients.length > 0) {
+                        clients.forEach(client => {
+                            const option = document.createElement('option');
+                            option.value = client.client_id;
+                            option.textContent = client.business_name;
+                            selectorElement.appendChild(option);
+                        });
+                        // Set initial client_id and name to the first client
+                        chatState.currentClientId = clients[0].client_id;
+                        chatState.currentClientName = clients[0].business_name;
+                        selectorElement.value = chatState.currentClientId; // Set selector to show default
+                    }
+                } catch (error) {
+                    this.ui.showToast('Failed to load businesses. Please ensure the admin API is running.', 'error');
+                    // Ensure currentClientId is cleared if clients fail to load
+                    chatState.currentClientId = '';
+                    chatState.currentClientName = '';
+                }
+            }
 
-        async function fetchData(url, method = 'GET', body = null) {
-            try {
+            async sendMessage(userId, clientId, message) {
+                return this.fetchData(`${this.baseURL}/chat`, 'POST', {
+                    user_id: userId,
+                    client_id: clientId,
+                    message: message
+                });
+            }
+
+            async fetchHistory(userId, clientId) {
+                const historyData = await this.fetchData(`${this.baseURL}/history/${userId}/${clientId}`);
+                return historyData.history;
+            }
+
+            async resetChat(userId, clientId) {
+                return this.fetchData(`${this.baseURL}/reset/${userId}/${clientId}`, 'POST');
+            }
+
+            // Centralized fetch logic with error handling
+            async fetchData(url, method = 'GET', body = null) {
+                if (!this.isConnected) {
+                    throw new Error('API is disconnected. Cannot make request.');
+                }
                 const options = { method };
                 if (body) {
                     options.headers = { 'Content-Type': 'application/json' };
                     options.body = JSON.stringify(body);
                 }
-                const response = await fetch(url, options);
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.detail || `API error: ${response.status}`);
-                }
-                return data;
-            } catch (error) {
-                console.error('Fetch error:', error);
-                showCustomAlert(`Error: ${error.message}`);
-                throw error; // Re-throw to be caught by the calling function
-            }
-        }
-
-        // --- Chat Functions ---
-
-        async function sendMessage() {
-            const message = userInput.value.trim();
-            if (message === '') return;
-            if (currentClientId === '') {
-                showCustomAlert('Please select a business first!');
-                return;
-            }
-
-            displayMessage('user', message);
-            userInput.value = ''; // Clear input
-
-            // Add a temporary loading indicator for bot response
-            const loadingIndicator = document.createElement('div');
-            loadingIndicator.classList.add('loading-indicator');
-            loadingIndicator.textContent = 'Luna is typing...';
-            chatMessages.appendChild(loadingIndicator);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            try {
-                const response = await fetchData(`${API_BASE_URL}/chat`, 'POST', {
-                    user_id: currentUserId,
-                    client_id: currentClientId,
-                    message: message
-                });
-                displayMessage('bot', response.response);
-            } catch (error) {
-                displayMessage('bot', "I'm sorry, I'm having trouble connecting right now. Please try again later.");
-            } finally {
-                loadingIndicator.remove(); // Remove loading indicator
-            }
-        }
-
-        async function loadHistory() {
-            chatMessages.innerHTML = ''; // Clear current messages
-            if (currentClientId === '') return;
-
-            try {
-                const historyData = await fetchData(`${API_BASE_URL}/history/${currentUserId}/${currentClientId}`);
-                historyData.history.forEach(entry => {
-                    if (entry.message.startsWith('User: ')) {
-                        displayMessage('user', entry.message.replace('User: ', ''));
-                    } else if (entry.message.startsWith('Bot: ')) {
-                        displayMessage('bot', entry.message.replace('Bot: ', ''));
-                    }
-                });
-            } catch (error) {
-                // Error already handled by fetchData
-                displayMessage('bot', "Failed to load chat history.");
-            }
-        }
-
-        async function resetChat() {
-            if (currentClientId === '') {
-                showCustomAlert('Please select a business first.');
-                return;
-            }
-            const confirmReset = await showCustomConfirm('Are you sure you want to reset the chat history for this client?');
-            if (confirmReset) {
                 try {
-                    const data = await fetchData(`${API_BASE_URL}/reset/${currentUserId}/${currentClientId}`, 'POST');
-                    showCustomAlert(data.message, 'success');
-                    await loadHistory(); // Reloads empty history
+                    const response = await fetch(url, options);
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(data.detail || `API error: ${response.status}`);
+                    }
+                    return data;
                 } catch (error) {
-                    // Error already handled by fetchData
-                    showCustomAlert("Failed to reset chat history.", 'error');
+                    console.error('Fetch error:', error);
+                    throw error;
                 }
             }
         }
 
-        // --- New Client Loading Function ---
-        async function loadClientsIntoSelector() {
-            try {
-                const clients = await fetchData(`${API_BASE_URL}/admin/clients`);
-                clientSelector.innerHTML = '<option value="">-- Select Business --</option>'; // Clear existing
-                clients.forEach(client => {
-                    const option = document.createElement('option');
-                    option.value = client.client_id;
-                    option.textContent = client.business_name;
-                    clientSelector.appendChild(option);
-                });
+        class MessageManager {
+            // FIXED: Added 'api' to constructor
+            constructor(api) { 
+                this.api = api; // Store API manager
+                this.messages = [];
+            }
 
-                // Set initial client_id if any clients are available
-                if (clients.length > 0) {
-                    currentClientId = clients[0].client_id; // Set to the first client by default
-                    clientSelector.value = currentClientId;
-                    loadHistory(); // Load history for the default selected client
+            addMessage(sender, text, uiManager) {
+                this.messages.push({ sender, text, timestamp: new Date() });
+                uiManager.displayMessage(sender, text);
+            }
+
+            async loadHistory(userId, clientId, uiManager) {
+                // uiManager.clearMessages(); // Already handled by ChatWidget.init/switchClient
+                this.messages = []; // Clear internal message store
+
+                try {
+                    // FIXED: Call this.api.fetchHistory now that it's available
+                    const history = await this.api.fetchHistory(userId, clientId); 
+                    if (history.length > 0) {
+                        history.forEach(entry => {
+                            let sender = 'bot'; // Default to bot if message format is not clear
+                            let messageText = entry.message;
+                            if (entry.message.startsWith('User: ')) {
+                                sender = 'user';
+                                messageText = entry.message.replace('User: ', '');
+                            } else if (entry.message.startsWith('Bot: ')) {
+                                sender = 'bot';
+                                messageText = entry.message.replace('Bot: ', '');
+                            }
+                            this.addMessage(sender, messageText, uiManager); // Re-use addMessage to display
+                        });
+                    }
+                } catch (error) {
+                    uiManager.showToast("Failed to load chat history.", 'error');
                 }
+            }
 
-            } catch (error) {
-                // Error handled by fetchData
-                showCustomAlert('Failed to load businesses. Please ensure the admin API is running.', 'error');
+            clearMessages(uiManager) {
+                this.messages = [];
+                uiManager.clearMessages();
             }
         }
 
-        // --- Event Listeners ---
-        sendButton.addEventListener('click', sendMessage);
-        userInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                sendMessage();
+        class ChatStateManager {
+            constructor() {
+                this.currentUserId = 'guest_user_' + Math.random().toString(36).substring(2, 15);
+                this.currentClientId = ''; // Will be set by API manager on client load
+                this.currentClientName = ''; // Will be set by API manager
             }
-        });
-        resetButton.addEventListener('click', resetChat);
+        }
 
-        // Event listener for client selector change
-        clientSelector.addEventListener('change', (event) => {
-            currentClientId = event.target.value;
-            console.log(`Switched to client: ${currentClientId}`);
-            loadHistory(); // Load history for the newly selected client
-        });
-
-        // Load clients into selector AND history when the page loads
-        window.addEventListener('load', async () => {
-            await loadClientsIntoSelector(); // First, load clients
-            // loadHistory() is called within loadClientsIntoSelector if clients are present
+        // Initialize Chat Widget
+        let chatWidget;
+        document.addEventListener('DOMContentLoaded', () => {
+            chatWidget = new ChatWidget();
         });
     </script>
 </body>
